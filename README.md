@@ -15,10 +15,6 @@ Some documentation can be found in docstrings in the latter file.
 
 Simple way to read and print some samples:
 
-```python
-from rtlsdr import RtlSdr
-
-sdr = RtlSdr()
 
 # configure device
 
