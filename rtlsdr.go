@@ -2,7 +2,7 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-// Package go-rtlsdr wraps rtl-sdr, which turns your Realtek RTL2832 based
+// Package gortlsdr wraps rtl-sdr, which turns your Realtek RTL2832 based
 // DVB dongle into a SDR receiver
 //
 // The package is low level and, for the most part, is one-to-one with the
@@ -13,7 +13,7 @@
 //     http://sdr.osmocom.org/trac/wiki/rtl-sdr
 //
 //
-// Direct download: http://download.ni.com/support/softlib/gpib/
+// Direct download: http://https://github.com/jpoirier/gortlsdr
 //
 package rtlsdr
 
@@ -301,18 +301,6 @@ func (c *Context) SetDirectSampling(on int) (err int) {
 func (c *Context) ResetBuffer() (err int) {
 	return int(C.rtlsdr_reset_buffer((*C.rtlsdr_dev_t)(c.dev)))
 }
-
-/*
-//export MyFunction
-func MyFunction(arg1, arg2 int, arg3 string) int64 {...}
-
-//export MyFunction2
-func MyFunction2(arg1, arg2 int, arg3 string) (int64, *C.char) {...}
-
-extern int64 MyFunction(int arg1, int arg2, GoString arg3);
-extern struct MyFunction2_return MyFunction2(int arg1, int arg2, GoString arg3);
-
-*/
 
 // int rtlsdr_read_sync(rtlsdr_dev_t *dev, void *buf, int len, int *n_read);
 func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
