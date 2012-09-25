@@ -13,7 +13,7 @@
 //     http://sdr.osmocom.org/trac/wiki/rtl-sdr
 //
 //
-// Direct download: http://https://github.com/jpoirier/gortlsdr
+// Direct download: http://github.com/jpoirier/gortlsdr
 //
 package rtlsdr
 
