@@ -3,16 +3,16 @@
 package main
 
 import (
+	rtl "github.com/jpoirier/gortlsdr"
 	"log"
-	"rtlsdr"
 )
 
 func main() {
 	indx := -1
-	c := rtlsdr.GetDeviceCount()
+	c := rtl.GetDeviceCount()
 
-	for i := 0; i < int(c); i++ {
-		m, p, s, err := rtlsdr.GetDeviceUsbStrings(uint32(i))
+	for i := 0; i < c; i++ {
+		m, p, s, err := rtl.GetDeviceUsbStrings(i)
 		if err != 0 {
 			indx++
 			log.Printf("err: %d, m: %s, p: %s, s: %s\n", err, m, p, s)
@@ -24,22 +24,26 @@ func main() {
 	}
 
 	log.Printf("Using device indx %d\n", 0)
-	rtl, err := rtlsdr.Open(uint32(0))
+	dev, err := rtl.Open(0)
 	if err != 0 {
 		log.Fatal("Failed to open the device\n")
 	}
 
-	g := rtl.GetTunerGains()
+	g := dev.GetTunerGains()
 	for i := 0; i < len(g); i++ {
 		log.Printf("Gain %d: %d\n", i, g[i])
 	}
 
-	log.Printf("Setting sample rate to %d\n", rtlsdr.DEFAULT_SAMPLE_RATE)
-	err = rtl.SetSampleRate(rtlsdr.DEFAULT_SAMPLE_RATE)
+	for i, j := range g {
+		log.Printf("Gain %d: %d\n", i, j)
+	}
+
+	log.Printf("Setting sample rate to %d\n", rtl.DEFAULT_SAMPLE_RATE)
+	err = dev.SetSampleRate(rtl.DEFAULT_SAMPLE_RATE)
 	if err != 0 {
 		log.Fatal("SetSampleRate failed\n")
 	}
 
 	log.Printf("Closing...\n")
-	rtl.Close()
+	dev.Close()
 }
