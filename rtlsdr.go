@@ -79,7 +79,7 @@ func GetDeviceName(index uint32) (name string) {
 // Get USB device strings.
 //
 // int rtlsdr_get_device_usb_strings(uint32_t index, char *manufact, char *product, char *serial);
-func GetDeviceUsbStrings(index uint32) (manufact, product, serial string, err int) {
+func GetDeviceUsbStrings(index int) (manufact, product, serial string, err int) {
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
 	s := make([]byte, 257)
@@ -91,7 +91,7 @@ func GetDeviceUsbStrings(index uint32) (manufact, product, serial string, err in
 // Open returns a valid device's context.
 //
 // int rtlsdr_open(rtlsdr_dev_t **dev, uint32_t index);
-func Open(index uint32) (c *Context, err int) {
+func Open(index int) (c *Context, err int) {
 	c = &Context{}
 	err = int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&c.dev), C.uint32_t(index)))
 	return
@@ -116,7 +116,7 @@ func (c *Context) Close() (err int) {
 // Values are in Hz.
 //
 // int rtlsdr_set_xtal_freq(rtlsdr_dev_t *dev, uint32_t rtl_freq, uint32_t tuner_freq);
-func (c *Context) SetXtalFreq(rtl_freq, tuner_freq uint32) (err int) {
+func (c *Context) SetXtalFreq(rtl_freq, tuner_freq int) (err int) {
 	return int(C.rtlsdr_set_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(rtl_freq), C.uint32_t(tuner_freq)))
 }
@@ -127,7 +127,7 @@ func (c *Context) SetXtalFreq(rtl_freq, tuner_freq uint32) (err int) {
 // Frequency values are in Hz.
 //
 // rtlsdr_get_xtal_freq(rtlsdr_dev_t *dev, uint32_t *rtl_freq, uint32_t *tuner_freq);
-func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq, uint32, err int) {
+func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq, int, err int) {
 	err = int(C.rtlsdr_get_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
 		(*C.uint32_t)(unsafe.Pointer(&rtl_freq)), (*C.uint32_t)(unsafe.Pointer(&tuner_freq))))
 	return
@@ -148,7 +148,7 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 // Set the device center frequency.
 //
 // int rtlsdr_set_center_freq(rtlsdr_dev_t *dev, uint32_t freq);
-func (c *Context) SetCenterFreq(freq uint32) (err int) {
+func (c *Context) SetCenterFreq(freq int) (err int) {
 	return int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev), C.uint32_t(freq)))
 }
 
@@ -157,8 +157,8 @@ func (c *Context) SetCenterFreq(freq uint32) (err int) {
 // Frequency values are in Hz.
 //
 // uint32_t rtlsdr_get_center_freq(rtlsdr_dev_t *dev);
-func (c *Context) GetCenterFreq() (freq uint32) {
-	return uint32(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
+func (c *Context) GetCenterFreq() (freq int) {
+	return int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Set the frequency correction value for the device.
@@ -175,8 +175,8 @@ func (c *Context) SetFreqCorrection(ppm int) (err int) {
 // Correction value in ppm (parts per million).
 //
 // int rtlsdr_get_freq_correction(rtlsdr_dev_t *dev);
-func (c *Context) GetFreqCorrection() (freq uint32) {
-	return uint32(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
+func (c *Context) GetFreqCorrection() (freq int) {
+	return int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Get the tuner type.
@@ -249,7 +249,7 @@ func (c *Context) SetTunerGainMode(manual int) (err int) {
 // Selects the baseband filters according to the requested sample rate.
 //
 // int rtlsdr_set_sample_rate(rtlsdr_dev_t *dev, uint32_t rate);
-func (c *Context) SetSampleRate(rate uint32) (err int) {
+func (c *Context) SetSampleRate(rate int) (err int) {
 	return int(C.rtlsdr_set_sample_rate((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(rate)))
 }
@@ -257,8 +257,8 @@ func (c *Context) SetSampleRate(rate uint32) (err int) {
 // Get actual sample rate the device is configured to.
 //
 // uint32_t rtlsdr_get_sample_rate(rtlsdr_dev_t *dev);
-func (c *Context) GetSampleRate() (rate uint32) {
-	return uint32(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
+func (c *Context) GetSampleRate() (rate int) {
+	return int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Enable test mode that returns an 8 bit counter instead of the samples.
@@ -321,7 +321,7 @@ type ReadAsyncCb_T func(buf []uint8, len uint32)
 // default buffer length (16 * 32 * 512).
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
-func (c *Context) ReadAsync(f ReadAsyncCb_T, ctx *Void, buf_num, buf_len uint32) (n_read int, err int) {
+func (c *Context) ReadAsync(f ReadAsyncCb_T, ctx *Void, buf_num, buf_len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&f)),
 		unsafe.Pointer(ctx),
