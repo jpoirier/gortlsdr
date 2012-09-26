@@ -33,10 +33,6 @@ func main() {
 	}
 
 	g := dev.GetTunerGains()
-	for i := 0; i < len(g); i++ {
-		log.Printf("Gain %d: %d\n", i, g[i])
-	}
-
 	for i, j := range g {
 		log.Printf("Gain %d: %d\n", i, j)
 	}
