@@ -149,7 +149,7 @@ func main() {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
 
-	_ = <-c1 // wait for signal
+	//_ = <-c1 // wait for signal
 	if ok = dev.CancelAsync(); ok != rtl.Success {
 		log.Fatal("ReadSync failed, exiting\n")
 	}
