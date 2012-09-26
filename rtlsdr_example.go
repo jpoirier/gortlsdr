@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-	indx := -1
 	c := rtl.GetDeviceCount()
 	if c == 0 {
 		log.Fatal("No devices found.\n")
@@ -16,15 +15,10 @@ func main() {
 
 	for i := 0; i < c; i++ {
 		m, p, s, err := rtl.GetDeviceUsbStrings(i)
-		if err != 0 {
-			indx++
-			log.Printf("err: %d, m: %s, p: %s, s: %s\n", err, m, p, s)
-		}
+		log.Printf("Device USB Striing - err: %d, m: %s, p: %s, s: %s\n", err, m, p, s)
 	}
 
-	if indx != -1 {
-		log.Fatal("No devices found.\n")
-	}
+	log.Printf("Device name: %s\n", rtl.GetDeviceName(0))
 
 	log.Printf("Using device indx %d\n", 0)
 	dev, err := rtl.Open(0)
@@ -32,6 +26,12 @@ func main() {
 		log.Fatal("Failed to open the device\n")
 	}
 	defer dev.Close()
+
+	m, p, s, err := dev.GetUsbStrings()
+	if err == -1 {
+		log.Fatal("GetUsbStrings failed, exiting\n")
+	}
+	log.Printf("USB strings - m: %s, p: %s, s: %s\n", m, p, s)
 
 	g := dev.GetTunerGains()
 	for i, j := range g {
