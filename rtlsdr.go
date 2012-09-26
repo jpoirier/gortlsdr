@@ -122,14 +122,13 @@ var clientCtx UserCtx
 
 //export go_callback
 func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
+	// c buffer to go slice without copying
 	var buffer []int8
 	length := int(p2)
 	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
 	b.Cap = length
 	b.Len = length
 	b.Data = uintptr(unsafe.Pointer(p1))
-	// func go_callback(pF unsafe.Pointer, p1 *C.uint8, p2 C.uint32_t, p3 unsafe.Pointer) {
-	// f := *(*func(*C.uint8, uint32_t(p2), UserCtx(unsafe.Pointer))(pF)
 	clientCb(buffer, clientCtx)
 }
 

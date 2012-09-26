@@ -5,7 +5,7 @@ package main
 import (
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
-	"reflect"
+	"runtime"
 	"unsafe"
 )
 
@@ -24,15 +24,20 @@ func rtlsdr_callback(buf []int8, userctx rtl.UserCtx) {
 	log.Printf("C buf length: %d\n", length)
 	log.Printf("Go buffer length: %d\n", len(buffer))
 
+	c1 <- 1 // tell main we're done
+}
+
+func async_read_stop() {
+	_ = <-c1 // wait for signal
+
 	log.Printf("Calling CancelAsync\n")
 	if ok := dev.CancelAsync(); ok != rtl.Success {
 		log.Fatal("ReadSync failed\n")
 	}
-
-	//c1 <- 1 // tell main we're done
 }
 
 func main() {
+	runtime.GOMAXPROCS(2)
 	if c := rtl.GetDeviceCount(); c == 0 {
 		log.Fatal("No devices found.\n")
 	} else {
@@ -161,7 +166,7 @@ func main() {
 	}
 	log.Println("ReadAsync returned")
 
-	//_ = <-c1 // wait for signal
+	//
 
 	log.Printf("Closing...\n")
 }
