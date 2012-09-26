@@ -7,38 +7,41 @@ import (
 	"log"
 )
 
-func rtlsdr_callback(buf *[]uint8, len uint32, userctx *UserCtx) {
+func rtlsdr_callback(buf *[]uint8, len uint32, userctx rtl.UserCtx) {
+	//	c := chan(userctx)
+	// log.Printf("buf[0]: %d\n", buf[0])
+	// log.Printf("buf length: %d\n", len)
 
+	//	c <- 1 // tell main we're done
 }
 
 func main() {
-	c := rtl.GetDeviceCount()
-	if c == 0 {
+	if c := rtl.GetDeviceCount(); c == 0 {
 		log.Fatal("No devices found.\n")
-	}
-
-	for i := 0; i < c; i++ {
-		m, p, s, err := rtl.GetDeviceUsbStrings(i)
-		log.Printf("Device USB Striing - err: %d, m: %s, p: %s, s: %s\n", err, m, p, s)
+	} else {
+		for i := 0; i < c; i++ {
+			m, p, s, err := rtl.GetDeviceUsbStrings(i)
+			log.Printf("Device USB Striing - err: %d, m: %s, p: %s, s: %s\n", err, m, p, s)
+		}
 	}
 
 	log.Printf("Device name: %s\n", rtl.GetDeviceName(0))
 
 	log.Printf("Using device indx %d\n", 0)
-	dev, ok := rtl.Open(0)
-	if ok != rtl.Success {
+	var ok int
+	var dev *rtl.Context
+	if dev, ok = rtl.Open(0); ok != rtl.Success {
 		log.Fatal("Failed to open the device\n")
 	}
 	defer dev.Close()
 
-	m, p, s, ok := dev.GetUsbStrings()
-	if ok != rtl.Success {
+	if m, p, s, ok := dev.GetUsbStrings(); ok != rtl.Success {
 		log.Fatal("GetUsbStrings failed, exiting\n")
+	} else {
+		log.Printf("USB strings - m: %s, p: %s, s: %s\n", m, p, s)
 	}
-	log.Printf("USB strings - m: %s, p: %s, s: %s\n", m, p, s)
 
-	g, ok := dev.GetTunerGains()
-	if ok != rtl.Success {
+	if g, ok := dev.GetTunerGains(); ok != rtl.Success {
 		log.Fatal("GetTunerGains failed, exiting\n")
 	} else {
 		for i, j := range g {
@@ -46,8 +49,7 @@ func main() {
 		}
 	}
 
-	rate, ok := dev.GetSampleRate()
-	if ok == rtl.Error {
+	if rate, ok := dev.GetSampleRate(); ok == rtl.Error {
 		// rtl-sdr lib needs fixing/
 		log.Printf("GetSampleRate: %d\n", rate)
 		// log.Fatal("GetCenterFreq failed, exiting\n")
@@ -56,26 +58,22 @@ func main() {
 	}
 
 	log.Printf("Setting sample rate to %d\n", rtl.DefaultSampleRate)
-	ok = dev.SetSampleRate(rtl.DefaultSampleRate)
-	if ok != rtl.Success {
+	if ok = dev.SetSampleRate(rtl.DefaultSampleRate); ok != rtl.Success {
 		log.Fatal("SetSampleRate failed, exiting\n")
 	}
 
-	//-----------------------
-	rtl_freq, tuner_freq, ok := dev.GetXtalFreq()
-	if ok != rtl.Success {
+	var rtl_freq, tuner_freq int
+	if rtl_freq, tuner_freq, ok = dev.GetXtalFreq(); ok != rtl.Success {
 		log.Fatal("GetXtalFreq failed, exiting\n")
 	} else {
 		log.Printf("GetXtalFreq - Center freq: %d, Tuner freq: %d\n", rtl_freq, tuner_freq)
 	}
 
-	ok = dev.SetXtalFreq(rtl_freq, tuner_freq)
-	if ok != rtl.Success {
+	if ok = dev.SetXtalFreq(rtl_freq, tuner_freq); ok != rtl.Success {
 		log.Fatal("SetXtalFreq failed, exiting\n")
 	}
 
-	freq, ok := dev.GetCenterFreq()
-	if ok == rtl.Error {
+	if freq, ok := dev.GetCenterFreq(); ok == rtl.Error {
 		// rtl-sdr lib needs fixing/
 		log.Printf("Center freq: %d\n", freq)
 		// log.Fatal("GetCenterFreq failed, exiting\n")
@@ -91,8 +89,7 @@ func main() {
 	// 	log.Printf("Center freq set: %d\n", freq)
 	// }
 
-	freq, ok = dev.GetFreqCorrection()
-	if ok != rtl.Success {
+	if freq, ok := dev.GetFreqCorrection(); ok != rtl.Success {
 		// rtl-sdr lib needs fixing/
 		log.Printf("GetFreqCorrection: %d\n", freq)
 		// log.Fatal("GetCenterFreq failed, exiting\n")
@@ -115,30 +112,37 @@ func main() {
 		func (c *Context) CancelAsync() (err int)
 	*/
 
-	ok = dev.SetTestMode(1)
-	if ok < 1 {
+	if ok = dev.SetTestMode(1); ok < 1 {
 		log.Printf("SetTestMode to on failed with error code: %d\n", ok)
 		log.Fatal("")
 	}
 
-	ok = dev.ResetBuffer()
-	if ok != rtl.Success {
+	if ok = dev.ResetBuffer(); ok != rtl.Success {
 		log.Fatal("Buffer reset failed, exiting\n")
 	}
 
 	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
-	n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength)
-	if ok != rtl.Success {
+	if n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadSync failed, exiting\n")
+	} else {
+		if n_read < rtl.DefaultBufLength {
+			log.Fatal("ReadSync short read, samples lost, exiting\n")
+		}
 	}
-	if n_read < rtl.DefaultBufLength {
-		log.Fatal("ReadSync short read, samples lost, exiting\n")
-	}
+
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	c1 := make(chan int)
-	rtl.ReadAsync(rtlsdr_callback, rtl.UserCtx(c1), rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	// c1 := make(chan int)
+	// if n_read, ok = rtl.ReadAsync(rtlsdr_callback, rtl.UserCtx(c1), rtl.DefaultAsyncBufNumber,
+	// 	rtl.DefaultBufLength); ok != rtl.Success {
+	// 	log.Fatal("ReadAsync failed, exiting\n")
+	// }
+
+	// _ = <-c1 // wait for signal
+	// if ok = CancelAsync(); ok != rtl.Success {
+	// 	log.Fatal("ReadSync failed, exiting\n")
+	// }
 
 	log.Printf("Closing...\n")
 }
