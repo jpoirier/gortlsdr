@@ -126,10 +126,11 @@ func (c *Context) SetXtalFreq(rtl_freq, tuner_freq int) (err int) {
 // Usually both ICs use the same clock.
 // Frequency values are in Hz.
 //
-// rtlsdr_get_xtal_freq(rtlsdr_dev_t *dev, uint32_t *rtl_freq, uint32_t *tuner_freq);
-func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq, int, err int) {
+// int rtlsdr_get_xtal_freq(rtlsdr_dev_t *dev, uint32_t *rtl_freq, uint32_t *tuner_freq);
+func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq int, err int) {
 	err = int(C.rtlsdr_get_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
-		(*C.uint32_t)(unsafe.Pointer(&rtl_freq)), (*C.uint32_t)(unsafe.Pointer(&tuner_freq))))
+		(*C.uint32_t)(unsafe.Pointer(&rtl_freq)),
+		(*C.uint32_t)(unsafe.Pointer(&tuner_freq))))
 	return
 }
 
