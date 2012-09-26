@@ -7,7 +7,9 @@ import (
 	"log"
 )
 
-func rtlsdr_callback(buf []uint8, len uint32, userdata interface{})
+func rtlsdr_callback(buf *[]uint8, len uint32, userdata interface{}) {
+
+}
 
 func main() {
 	c := rtl.GetDeviceCount()
@@ -134,6 +136,9 @@ func main() {
 	}
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
+
+	c1 := make(chan int)
+	rtl.ReadAsync(rtlsdr_callback, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 
 	log.Printf("Closing...\n")
 }
