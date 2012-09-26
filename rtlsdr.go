@@ -128,7 +128,7 @@ func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	b := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
 	b.Cap = length
 	b.Len = length
-	b.Data = uintptr(unsafe.Pointer(p1))
+	b.Data = uintptr(unsafe.Pointer((*int8)(p1)))
 	clientCb(buf, clientCtx)
 }
 
