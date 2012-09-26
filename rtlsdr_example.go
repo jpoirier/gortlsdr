@@ -10,20 +10,20 @@ import (
 )
 
 // TODO: pass the channel via the callback UserCtx
-//var c1 chan
+var c1 = make(chan int)
 
 func rtlsdr_callback(buf *uint8, length uint32, userctx rtl.UserCtx) {
 	// c buffer to go slice without copying the data
-	var b []uint8
-	buffer := (*reflect.SliceHeader)((unsafe.Pointer(&b)))
-	buffer.Cap = int(length)
-	buffer.Len = int(length)
-	buffer.Data = uintptr(unsafe.Pointer(buf))
+	var buffer []uint8
+	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
+	b.Cap = int(length)
+	b.Len = int(length)
+	b.Data = uintptr(unsafe.Pointer(buf))
 
 	log.Printf("C buf length: %d\n", length)
 	log.Printf("Go buffer length: %d\n", len(buffer))
 
-	//	c1 <- 1 // tell main we're done
+	c1 <- 1 // tell main we're done
 }
 
 func main() {
@@ -144,16 +144,16 @@ func main() {
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	// c1 = make(chan int)
-	// if n_read, ok = rtl.ReadAsync(rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
-	// 	rtl.DefaultBufLength); ok != rtl.Success {
-	// 	log.Fatal("ReadAsync failed, exiting\n")
-	// }
+	var f ReadAsyncCb_T = rtlsdr_callback
+	if n_read, ok := dev.ReadAsync(f, nil, rtl.DefaultAsyncBufNumber,
+		rtl.DefaultBufLength); ok != rtl.Success {
+		log.Fatal("ReadAsync failed, exiting\n")
+	}
 
-	// _ = <-c1 // wait for signal
-	// if ok = CancelAsync(); ok != rtl.Success {
-	// 	log.Fatal("ReadSync failed, exiting\n")
-	// }
+	_ = <-c1 // wait for signal
+	if ok = dev.CancelAsync(); ok != rtl.Success {
+		log.Fatal("ReadSync failed, exiting\n")
+	}
 
 	log.Printf("Closing...\n")
 }

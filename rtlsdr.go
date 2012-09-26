@@ -420,7 +420,7 @@ func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 }
 
 // typedef void(*rtlsdr_read_async_cb_t)(unsigned char *buf, uint32_t len, void *ctx);
-type ReadAsyncCb_T func(buf *uint8, length uint32, userdata interface{})
+type ReadAsyncCb_T *func(buf *uint8, length uint32, userdata interface{})
 
 // Read samples from the device asynchronously. This function will block until
 // it is being canceled using rtlsdr_cancel_async()
