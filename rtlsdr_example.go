@@ -12,7 +12,7 @@ import (
 // TODO: pass the channel via the callback UserCtx
 var c1 = make(chan int)
 
-func rtlsdr_callback(buf *uint8, length uint32, userctx rtl.UserCtx) {
+func Rtlsdr_callback(buf *uint8, length uint32, userctx rtl.UserCtx) {
 	// c buffer to go slice without copying the data
 	var buffer []uint8
 	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
@@ -144,7 +144,7 @@ func main() {
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	var f ReadAsyncCb_T = rtlsdr_callback
+	var f rtl.ReadAsyncCb_T = rtl.ReadAsyncCb_T(&Rtlsdr_callback)
 	if n_read, ok := dev.ReadAsync(f, nil, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
