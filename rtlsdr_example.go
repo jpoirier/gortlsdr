@@ -7,6 +7,8 @@ import (
 	"log"
 )
 
+func rtlsdr_callback(buf []uint8, len uint32, userdata interface{})
+
 func main() {
 	c := rtl.GetDeviceCount()
 	if c == 0 {
