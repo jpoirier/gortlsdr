@@ -127,7 +127,7 @@ func (c *Context) SetXtalFreq(rtl_freq, tuner_freq int) (err int) {
 // Frequency values are in Hz.
 //
 // int rtlsdr_get_xtal_freq(rtlsdr_dev_t *dev, uint32_t *rtl_freq, uint32_t *tuner_freq);
-func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq int, err int) {
+func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq, err int) {
 	err = int(C.rtlsdr_get_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
 		(*C.uint32_t)(unsafe.Pointer(&rtl_freq)),
 		(*C.uint32_t)(unsafe.Pointer(&tuner_freq))))
