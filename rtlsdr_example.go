@@ -5,14 +5,25 @@ package main
 import (
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
+	"reflect"
+	"unsafe"
 )
 
-func rtlsdr_callback(buf *[]uint8, len uint32, userctx rtl.UserCtx) {
-	//	c := chan(userctx)
-	// log.Printf("buf[0]: %d\n", buf[0])
-	// log.Printf("buf length: %d\n", len)
+// TODO: pass the channel via the callback UserCtx
+//var c1 chan
 
-	//	c <- 1 // tell main we're done
+func rtlsdr_callback(buf *uint8, length uint32, userctx rtl.UserCtx) {
+	// c buffer to go slice without copying the data
+	var b []uint8
+	buffer := (*reflect.SliceHeader)((unsafe.Pointer(&b)))
+	buffer.Cap = int(length)
+	buffer.Len = int(length)
+	buffer.Data = uintptr(unsafe.Pointer(buf))
+
+	log.Printf("C buf length: %d\n", length)
+	log.Printf("Go buffer length: %d\n", len(buffer))
+
+	//	c1 <- 1 // tell main we're done
 }
 
 func main() {
@@ -133,8 +144,8 @@ func main() {
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	// c1 := make(chan int)
-	// if n_read, ok = rtl.ReadAsync(rtlsdr_callback, rtl.UserCtx(c1), rtl.DefaultAsyncBufNumber,
+	// c1 = make(chan int)
+	// if n_read, ok = rtl.ReadAsync(rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
 	// 	rtl.DefaultBufLength); ok != rtl.Success {
 	// 	log.Fatal("ReadAsync failed, exiting\n")
 	// }
