@@ -29,31 +29,59 @@ import (
 
 var PackageVersion string = "v0.1"
 
+/*
+TODO
+----
+The rtlsdr library returns inconsistent error codes:
+	rtlsdr_read_sync - returns libusb error codes but ut steps on one of them (-1)
+	rtlsdr_set_xtal_freq - returns libusb error codes but steps on some of them (-1, -2, -3)
+	rtlsdr_get_center_freq - returns 0 on error, should be non-zero, e.g. -1?
+	rtlsdr_get_tuner_gain - returns 0 on error, should be non-zero, e.g. -1?
+	rtlsdr_get_sample_rate - returns 0 on error, should be non-zero, e.g. -1?
+*/
+
 type Context struct {
 	dev *C.rtlsdr_dev_t
 }
 
 const (
 	/* tuner types */
-	TUNER_UNKNOWN = C.RTLSDR_TUNER_UNKNOWN
-	TUNER_E4000   = C.RTLSDR_TUNER_E4000
-	TUNER_FC0012  = C.RTLSDR_TUNER_FC0012
-	TUNER_FC0013  = C.RTLSDR_TUNER_FC0013
-	TUNER_FC2580  = C.RTLSDR_TUNER_FC2580
-	TUNER_R820T   = C.RTLSDR_TUNER_R820T
+	TunerUnknown = C.RTLSDR_TUNER_UNKNOWN
+	TunerE4000   = C.RTLSDR_TUNER_E4000
+	TunerFC0012  = C.RTLSDR_TUNER_FC0012
+	TunerFC0013  = C.RTLSDR_TUNER_FC0013
+	TunerFC2580  = C.RTLSDR_TUNER_FC2580
+	TunerR820T   = C.RTLSDR_TUNER_R820T
 
 	/* default parameter settings */
-	DEFAULT_GAIN      = "auto"
-	DEFAULT_FC        = 80e6
-	DEFAULT_RS        = 1.024e6
-	DEFAULT_READ_SIZE = 1024
-	CRYSTAL_FREQ      = 28800000
+	Default_GAIN    = "auto"
+	DefaultFc       = 80e6
+	DefaultRs       = 1.024e6
+	DefaultReadSize = 1024
+	CrystalFreq     = 28800000
 
-	DEFAULT_SAMPLE_RATE      = 2048000
-	DEFAULT_ASYNC_BUF_NUMBER = 32
-	DEFAULT_BUF_LENGTH       = (16 * 16384)
-	MINIMAL_BUF_LENGTH       = 512
-	MAXIMAL_BUF_LENGTH       = (256 * 16384)
+	DefaultSampleRate     = 2048000
+	DefaultAsyncBufNumber = 32
+	DefaultBufLength      = (16 * 16384)
+	MinimalBufLength      = 512
+	MaximalBufLength      = (256 * 16384)
+	Success               = 0
+	Error                 = -1
+
+	LibusbSuccess           = 0
+	LibusbErrorIo           = -1
+	LibusbErrorInvalidParam = -2
+	LibusbErrorAccess       = -3
+	LibusbErrorNoDevice     = -4
+	LibusbErrorNotFound     = -5
+	LibusbErrorBusy         = -6
+	LibusbErrorTimeout      = -7
+	LibusbErrorOverflow     = -8
+	LibusbErrorPipe         = -9
+	LibusbErrorInterrupted  = -10
+	LibusbErrorNoMem        = -11
+	LibusbErrorNotSupported = -12
+	LibusbErrorOther        = -99
 )
 
 // GetDeviceCount gets the number of valid USB dongles detected.
@@ -75,6 +103,7 @@ func GetDeviceName(index int) (name string) {
 // Get USB device strings.
 //
 // int rtlsdr_get_device_usb_strings(uint32_t index, char *manufact, char *product, char *serial);
+// rtlsdr_get_device_usb_strings returns 0 on success
 func GetDeviceUsbStrings(index int) (manufact, product, serial string, err int) {
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
@@ -89,6 +118,7 @@ func GetDeviceUsbStrings(index int) (manufact, product, serial string, err int) 
 // Open returns a valid device's context.
 //
 // int rtlsdr_open(rtlsdr_dev_t **dev, uint32_t index);
+// rtlsdr_open returns 0 on success
 func Open(index int) (c *Context, err int) {
 	c = &Context{}
 	err = int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&c.dev),
@@ -99,6 +129,7 @@ func Open(index int) (c *Context, err int) {
 // Close closes a previously opened device context.
 //
 // int rtlsdr_close(rtlsdr_dev_t *dev);
+// rtlsdr_close returns 0 on success
 func (c *Context) Close() (err int) {
 	return int(C.rtlsdr_close((*C.rtlsdr_dev_t)(c.dev)))
 }
@@ -115,6 +146,7 @@ func (c *Context) Close() (err int) {
 // Values are in Hz.
 //
 // int rtlsdr_set_xtal_freq(rtlsdr_dev_t *dev, uint32_t rtl_freq, uint32_t tuner_freq);
+// rtlsdr_set_xtal_freq returns 0 on success
 func (c *Context) SetXtalFreq(rtl_freq, tuner_freq int) (err int) {
 	return int(C.rtlsdr_set_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(rtl_freq),
@@ -127,6 +159,7 @@ func (c *Context) SetXtalFreq(rtl_freq, tuner_freq int) (err int) {
 // Frequency values are in Hz.
 //
 // int rtlsdr_get_xtal_freq(rtlsdr_dev_t *dev, uint32_t *rtl_freq, uint32_t *tuner_freq);
+// rtlsdr_get_xtal_freq returns 0 on success
 func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq, err int) {
 	err = int(C.rtlsdr_get_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
 		(*C.uint32_t)(unsafe.Pointer(&rtl_freq)),
@@ -137,6 +170,7 @@ func (c *Context) GetXtalFreq() (rtl_freq, tuner_freq, err int) {
 // Get USB device strings.
 //
 // int rtlsdr_get_usb_strings(rtlsdr_dev_t *dev, char *manufact, char *product, char *serial);
+// rtlsdr_get_usb_strings returns 0 on success
 func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
@@ -151,6 +185,7 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 // Set the device center frequency.
 //
 // int rtlsdr_set_center_freq(rtlsdr_dev_t *dev, uint32_t freq);
+// rtlsdr_set_center_freq returns 0 on success
 func (c *Context) SetCenterFreq(freq int) (err int) {
 	return int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(freq)))
@@ -161,8 +196,13 @@ func (c *Context) SetCenterFreq(freq int) (err int) {
 // Frequency values are in Hz.
 //
 // uint32_t rtlsdr_get_center_freq(rtlsdr_dev_t *dev);
-func (c *Context) GetCenterFreq() (freq int) {
-	return int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
+// rtlsdr_get_center_freq returns frequency in Hz or 0 on error
+func (c *Context) GetCenterFreq() (freq, err int) {
+	freq = int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
+	if freq == 0 {
+		err = -1
+	}
+	return
 }
 
 // Set the frequency correction value for the device.
@@ -170,6 +210,7 @@ func (c *Context) GetCenterFreq() (freq int) {
 // Frequency values are in Hz.
 //
 // int rtlsdr_set_freq_correction(rtlsdr_dev_t *dev, int ppm);
+// rtlsdr_set_freq_correction returns 0 on success
 func (c *Context) SetFreqCorrection(ppm int) (err int) {
 	return int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(c.dev),
 		C.int(ppm)))
@@ -180,13 +221,19 @@ func (c *Context) SetFreqCorrection(ppm int) (err int) {
 // Correction value in ppm (parts per million).
 //
 // int rtlsdr_get_freq_correction(rtlsdr_dev_t *dev);
-func (c *Context) GetFreqCorrection() (freq int) {
-	return int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
+// rtlsdr_get_freq_correction returns 0 on error
+func (c *Context) GetFreqCorrection() (freq, err int) {
+	freq = int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
+	if freq == 0 {
+		err = -1
+	}
+	return
 }
 
 // Get the tuner type.
 //
 // enum rtlsdr_tuner rtlsdr_get_tuner_type(rtlsdr_dev_t *dev);
+// rtlsdr_get_tuner_type returns enum type or unknown
 func (c *Context) GetTunerType() (rtlsdr_tuner int) {
 	return int(C.rtlsdr_get_tuner_type((*C.rtlsdr_dev_t)(c.dev)))
 }
@@ -197,15 +244,20 @@ func (c *Context) GetTunerType() (rtlsdr_tuner int) {
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
 //
 // int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains);
-func (c *Context) GetTunerGains() (gains []int) {
+// rtlsdr_get_tuner_gains returns <= 0 on error or the number of available gain
+func (c *Context) GetTunerGains() (gains []int, err int) {
 	//	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
 	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
 		(*C.int)(unsafe.Pointer(uintptr(0)))))
-	gains = make([]int, count)
-	if count != 0 {
-		C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
-			(*C.int)(unsafe.Pointer(&gains[0])))
+	if count < 0 {
+		err = count
+		return
+	} else if count == 0 {
+		return
 	}
+	gains = make([]int, count)
+	C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
+		(*C.int)(unsafe.Pointer(&gains[0])))
 	return
 }
 
@@ -218,6 +270,7 @@ func (c *Context) GetTunerGains() (gains []int) {
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
 //
 // int rtlsdr_set_tuner_gain(rtlsdr_dev_t *dev, int gain);
+// rtlsdr_set_tuner_gain returns 0 on success
 func (c *Context) SetTunerGain(gain int) (err int) {
 	return int(C.rtlsdr_set_tuner_gain((*C.rtlsdr_dev_t)(c.dev),
 		C.int(gain)))
@@ -228,8 +281,13 @@ func (c *Context) SetTunerGain(gain int) (err int) {
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
 //
 // int rtlsdr_get_tuner_gain(rtlsdr_dev_t *dev);
-func (c *Context) GetTunerGain() (gain int) {
-	return int(C.rtlsdr_get_tuner_gain((*C.rtlsdr_dev_t)(c.dev)))
+// rtlsdr_get_tuner_gain returns 0 on error or the gain in tenths of a dB
+func (c *Context) GetTunerGain() (gain, err int) {
+	gain = int(C.rtlsdr_get_tuner_gain((*C.rtlsdr_dev_t)(c.dev)))
+	if gain == 0 {
+		err = -1
+	}
+	return
 }
 
 // Set the intermediate frequency gain for the device.
@@ -238,6 +296,7 @@ func (c *Context) GetTunerGain() (gain int) {
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
 //
 // int rtlsdr_set_tuner_if_gain(rtlsdr_dev_t *dev, int stage, int gain);
+// rtlsdr_set_tuner_if_gain returns 0 on success
 func (c *Context) SetTunerIfGain(stage, gain int) (err int) {
 	return int(C.rtlsdr_set_tuner_if_gain((*C.rtlsdr_dev_t)(c.dev),
 		C.int(stage),
@@ -251,6 +310,7 @@ func (c *Context) SetTunerIfGain(stage, gain int) (err int) {
 // \param manual gain mode, 1 means manual gain mode shall be enabled.
 // \return 0 on success
 // int rtlsdr_set_tuner_gain_mode(rtlsdr_dev_t *dev, int manual);
+// rtlsdr_set_tuner_gain_mode returns 0 on success
 func (c *Context) SetTunerGainMode(manual int) (err int) {
 	return int(C.rtlsdr_set_tuner_gain_mode((*C.rtlsdr_dev_t)(c.dev),
 		C.int(manual)))
@@ -259,6 +319,7 @@ func (c *Context) SetTunerGainMode(manual int) (err int) {
 // Selects the baseband filters according to the requested sample rate.
 //
 // int rtlsdr_set_sample_rate(rtlsdr_dev_t *dev, uint32_t rate);
+// rtlsdr_set_sample_rate returns 0 on success
 func (c *Context) SetSampleRate(rate int) (err int) {
 	return int(C.rtlsdr_set_sample_rate((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(rate)))
@@ -267,8 +328,13 @@ func (c *Context) SetSampleRate(rate int) (err int) {
 // Get actual sample rate the device is configured to.
 //
 // uint32_t rtlsdr_get_sample_rate(rtlsdr_dev_t *dev);
-func (c *Context) GetSampleRate() (rate int) {
-	return int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
+// rtlsdr_get_sample_rate returns 0 on error or sample rate in Hz
+func (c *Context) GetSampleRate() (rate, err int) {
+	rate = int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
+	if rate == 0 {
+		err = -1
+	}
+	return
 }
 
 // Enable test mode that returns an 8 bit counter instead of the samples.
@@ -277,6 +343,7 @@ func (c *Context) GetSampleRate() (rate int) {
 // Test mode, 1 means enabled, 0 disabled
 //
 // int rtlsdr_set_testmode(rtlsdr_dev_t *dev, int on);
+// rtlsdr_set_testmode returns 0 on success
 func (c *Context) SetTestMode(on int) (err int) {
 	return int(C.rtlsdr_set_testmode((*C.rtlsdr_dev_t)(c.dev),
 		C.int(on)))
@@ -287,6 +354,7 @@ func (c *Context) SetTestMode(on int) (err int) {
 // Digital AGC mode, 1 means enabled, 0 disabled
 //
 // int rtlsdr_set_agc_mode(rtlsdr_dev_t *dev, int on);
+// rtlsdr_set_agc_mode returns 0 on success
 func (c *Context) SetAgcMode(on int) (err int) {
 	return int(C.rtlsdr_set_agc_mode((*C.rtlsdr_dev_t)(c.dev),
 		C.int(on)))
@@ -300,6 +368,7 @@ func (c *Context) SetAgcMode(on int) (err int) {
 // Sampling modes, 0: disabled, 1: I-ADC input enabled, 2: Q-ADC input enabled
 //
 // int rtlsdr_set_direct_sampling(rtlsdr_dev_t *dev, int on);
+// rtlsdr_set_direct_sampling returns 0 on success
 func (c *Context) SetDirectSampling(on int) (err int) {
 	return int(C.rtlsdr_set_direct_sampling((*C.rtlsdr_dev_t)(c.dev),
 		C.int(on)))
@@ -308,11 +377,13 @@ func (c *Context) SetDirectSampling(on int) (err int) {
 // streaming functions
 
 // int rtlsdr_reset_buffer(rtlsdr_dev_t *dev);
+// rtlsdr_reset_buffer returns 0 on success
 func (c *Context) ResetBuffer() (err int) {
 	return int(C.rtlsdr_reset_buffer((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // int rtlsdr_read_sync(rtlsdr_dev_t *dev, void *buf, int len, int *n_read);
+// rtlsdr_read_sync returns 0 on success
 func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_sync((*C.rtlsdr_dev_t)(c.dev),
 		(unsafe.Pointer(&buf[0])),
@@ -333,6 +404,7 @@ type ReadAsyncCb_T func(buf []uint8, len uint32, userdata interface{})
 // default buffer length (16 * 32 * 512).
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
+// rtlsdr_read_async returns 0 on success
 func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{},
 	buf_num, buf_len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
@@ -346,6 +418,7 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{},
 // Cancel all pending asynchronous operations on the device.
 //
 // int rtlsdr_cancel_async(rtlsdr_dev_t *dev);
+// rtlsdr_cancel_async returns 0 on success
 func (c *Context) CancelAsync() (err int) {
 	return int(C.rtlsdr_cancel_async((*C.rtlsdr_dev_t)(c.dev)))
 }
