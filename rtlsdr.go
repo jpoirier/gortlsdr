@@ -19,6 +19,9 @@ package rtlsdr
 
 // #cgo LDFLAGS: -lrtlsdr
 // #include <rtl-sdr.h>
+/*
+extern void go_callback(char* p1, uint32_t p2, void* p3);
+*/
 import "C"
 
 import (
@@ -110,6 +113,20 @@ var TypeMap = map[int]string{
 	TunerFC2580:  "RTLSDR_TUNER_FC2580",
 	TunerR820T:   "RTLSDR_TUNER_R820T",
 }
+
+// typedef void(*rtlsdr_read_async_cb_t)(unsigned char *buf, uint32_t len, void *ctx);
+type ReadAsyncCb_T func(buf *int8, length uint32, userdata UserCtx)
+
+var clientCB ReadAsyncCb_T
+
+//export go_callback
+func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
+	// func go_callback(pF unsafe.Pointer, p1 *C.uint8, p2 C.uint32_t, p3 unsafe.Pointer) {
+	// f := *(*func(*C.uint8, uint32_t(p2), UserCtx(unsafe.Pointer))(pF)
+	clientCB((*int8)(p1), uint32(p2), UserCtx(p3))
+}
+
+var GoCallback = go_callback
 
 // GetDeviceCount gets the number of valid USB dongles detected.
 //
@@ -419,9 +436,6 @@ func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 	return
 }
 
-// typedef void(*rtlsdr_read_async_cb_t)(unsigned char *buf, uint32_t len, void *ctx);
-type ReadAsyncCb_T func(buf *uint8, length uint32, userdata UserCtx)
-
 // Read samples from the device asynchronously. This function will block until
 // it is being canceled using rtlsdr_cancel_async()
 //
@@ -432,10 +446,11 @@ type ReadAsyncCb_T func(buf *uint8, length uint32, userdata UserCtx)
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
 // rtlsdr_read_async returns 0 on success
-func (c *Context) ReadAsync(f *func(buf *uint8, length uint32, userdata UserCtx), userctx UserCtx,
-	buf_num, buf_len int) (n_read int, err int) {
+func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
+	buf_len int) (n_read int, err int) {
+	clientCB = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
-		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(f)),
+		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&GoCallback)),
 		unsafe.Pointer(userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
