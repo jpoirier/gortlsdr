@@ -42,6 +42,15 @@ func main() {
 		}
 	}
 
+	rate, ok := dev.GetSampleRate()
+	if ok == rtl.Error {
+		// rtl-sdr lib needs fixing/
+		log.Printf("GetSampleRate: %d\n", rate)
+		// log.Fatal("GetCenterFreq failed, exiting\n")
+	} else {
+		log.Printf("GetSampleRate: %d\n", rate)
+	}
+
 	log.Printf("Setting sample rate to %d\n", rtl.DefaultSampleRate)
 	ok = dev.SetSampleRate(rtl.DefaultSampleRate)
 	if ok != rtl.Success {
@@ -88,23 +97,20 @@ func main() {
 	}
 
 	rtlsdr_tuner := dev.GetTunerType()
-	log.Printf("GetTunerType: %s\n", TypeMap[rtlsdr_tuner])
+	log.Printf("GetTunerType: %s\n", rtl.TypeMap[rtlsdr_tuner])
 
 	/*
 
 		func (c *Context) SetFreqCorrection(ppm int) (err int)
-		func (c *Context) GetTunerType() (rtlsdr_tuner int)
 		func (c *Context) SetTunerGain(gain int) (err int)
-		func (c *Context) GetTunerGain() (gain int)
 		func (c *Context) SetTunerIfGain(stage, gain int) (err int)
 		func (c *Context) SetTunerGainMode(manual int)
-		func (c *Context) GetSampleRate() (rate int)
 		func (c *Context) SetAgcMode(on int) (err int)
 		func (c *Context) SetDirectSampling(on int) (err int)
 		func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{}, buf_num, buf_len int) (n_read int, err int)
 		func (c *Context) CancelAsync() (err int)
 	*/
-	//-----------------------
+
 	ok = dev.SetTestMode(1)
 	if ok < 1 {
 		log.Printf("SetTestMode to on failed with error code: %d\n", ok)
