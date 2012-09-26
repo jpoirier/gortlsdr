@@ -33,11 +33,27 @@ var PackageVersion string = "v0.1"
 TODO
 ----
 The rtlsdr library returns inconsistent error codes:
-	rtlsdr_read_sync - returns libusb error codes but ut steps on one of them (-1)
-	rtlsdr_set_xtal_freq - returns libusb error codes but steps on some of them (-1, -2, -3)
-	rtlsdr_get_center_freq - returns 0 on error, should be non-zero, e.g. -1?
-	rtlsdr_get_tuner_gain - returns 0 on error, should be non-zero, e.g. -1?
-	rtlsdr_get_sample_rate - returns 0 on error, should be non-zero, e.g. -1?
+	o
+	o rtlsdr_read_sync - returns libusb error codes but ut steps on one of them (-1)
+	o rtlsdr_set_xtal_freq - returns libusb error codes but steps on some of them (-1, -2, -3)
+	o rtlsdr_get_center_freq - returns 0 on error, should be non-zero, e.g. -1?
+	o rtlsdr_get_tuner_gain - returns 0 on error, should be non-zero, e.g. -1?
+	o rtlsdr_get_sample_rate - returns 0 on error, should be non-zero, e.g. -1?
+	o rtlsdr_set_testmode - returns libusb error codes but ut steps on one of them (-1)
+	o rtlsdr_get_freq_correction - returns 0 on error, should be non-zero, e.g. -1?
+	o
+	o functions that return libusb_control_transfer's return value should state
+	  error values as less than zero
+	o rtlsdr_set_center_freq - rtlsdr_set_if_freq returns negative values on error
+	  or zero or more bytes written (it calls libusb_control_transfer) on success
+	  and dev->tuner->set_freq returns a zero on success, but rtlsdr_set_center_freq
+	  performs a 'not true' check prior to setting dev->freq, which incorrectly
+	  causes the freq to not get set when direct_sampling is being performed.
+
+	GetCenterFreq
+	GetFreqCorrection
+	GetTunerGain
+	GetSampleRate
 */
 
 type Context struct {
@@ -83,6 +99,15 @@ const (
 	LibusbErrorNotSupported = -12
 	LibusbErrorOther        = -99
 )
+
+var TypeMap = map[int]string{
+	TunerUnknown: "RTLSDR_TUNER_UNKNOWN",
+	TunerE4000:   "RTLSDR_TUNER_E4000",
+	TunerFC0012:  "RTLSDR_TUNER_FC0012",
+	TunerFC0013:  "RTLSDR_TUNER_FC0013",
+	TunerFC2580:  "RTLSDR_TUNER_FC2580",
+	TunerR820T:   "RTLSDR_TUNER_R820T",
+}
 
 // GetDeviceCount gets the number of valid USB dongles detected.
 //
@@ -185,7 +210,7 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 // Set the device center frequency.
 //
 // int rtlsdr_set_center_freq(rtlsdr_dev_t *dev, uint32_t freq);
-// rtlsdr_set_center_freq returns 0 on success
+// rtlsdr_set_center_freq returns a negative value on error
 func (c *Context) SetCenterFreq(freq int) (err int) {
 	return int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(freq)))
