@@ -31,6 +31,7 @@ func main() {
 	if err != 0 {
 		log.Fatal("Failed to open the device\n")
 	}
+	defer dev.Close()
 
 	g := dev.GetTunerGains()
 	for i, j := range g {
@@ -40,9 +41,29 @@ func main() {
 	log.Printf("Setting sample rate to %d\n", rtl.DEFAULT_SAMPLE_RATE)
 	err = dev.SetSampleRate(rtl.DEFAULT_SAMPLE_RATE)
 	if err != 0 {
-		log.Fatal("SetSampleRate failed\n")
+		log.Fatal("SetSampleRate failed, exiting\n")
 	}
 
+	err = dev.SetTestMode(1)
+	if err == -1 {
+		log.Fatal("Setting test mode failed, exiting\n")
+	}
+
+	err = dev.ResetBuffer()
+	if err == -1 {
+		log.Fatal("Buffer reset failed, exiting\n")
+	}
+
+	var buffer []byte = make([]uint8, rtl.DEFAULT_BUF_LENGTH)
+	n_read, err := dev.ReadSync(buffer, rtl.DEFAULT_BUF_LENGTH)
+	if err == -1 {
+		log.Fatal("ReadSync failed, exiting\n")
+	}
+	if n_read < rtl.DEFAULT_BUF_LENGTH {
+		log.Fatal("ReadSync short read, samples lost, exiting\n")
+	}
+	log.Println("ReadSync successful")
+	// log.Println(buffer)
+
 	log.Printf("Closing...\n")
-	dev.Close()
 }
