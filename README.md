@@ -1,6 +1,6 @@
 # Description
 
-***** The code in this project is under development and is not complete nor has it been fully tested! *****
+***** This project is under development and is not complete nor has it been fully tested! *****
 
 gortlsdr is a simple Go interface to devices supported by the RTL-SDR project, which turns certain USB DVB-T dongles
 employing the Realtek RTL2832U chipset into low-cost, general purpose software-defined radio receivers. It wraps all the
