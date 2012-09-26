@@ -144,7 +144,7 @@ func main() {
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	if n_read, ok := dev.ReadAsync(&Rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
+	if n_read, ok := dev.ReadAsync(rtl.ReadAsyncCb_T(Rtlsdr_callback), nil, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}

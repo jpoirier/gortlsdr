@@ -115,7 +115,7 @@ var TypeMap = map[int]string{
 }
 
 // typedef void(*rtlsdr_read_async_cb_t)(unsigned char *buf, uint32_t len, void *ctx);
-type ReadAsyncCb_T func(buf *int8, length uint32, userdata UserCtx)
+type ReadAsyncCb_T func(*int8, uint32, UserCtx)
 
 var clientCB ReadAsyncCb_T
 
