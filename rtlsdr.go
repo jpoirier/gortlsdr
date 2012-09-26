@@ -79,8 +79,10 @@ func GetDeviceUsbStrings(index int) (manufact, product, serial string, err int) 
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
 	s := make([]byte, 257)
-	err = int(C.rtlsdr_get_device_usb_strings(C.uint32_t(index), (*C.char)(unsafe.Pointer(&m[0])),
-		(*C.char)(unsafe.Pointer(&p[0])), (*C.char)(unsafe.Pointer(&s[0]))))
+	err = int(C.rtlsdr_get_device_usb_strings(C.uint32_t(index),
+		(*C.char)(unsafe.Pointer(&m[0])),
+		(*C.char)(unsafe.Pointer(&p[0])),
+		(*C.char)(unsafe.Pointer(&s[0]))))
 	return string(m), string(p), string(s), err
 }
 
@@ -89,7 +91,8 @@ func GetDeviceUsbStrings(index int) (manufact, product, serial string, err int) 
 // int rtlsdr_open(rtlsdr_dev_t **dev, uint32_t index);
 func Open(index int) (c *Context, err int) {
 	c = &Context{}
-	err = int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&c.dev), C.uint32_t(index)))
+	err = int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&c.dev),
+		C.uint32_t(index)))
 	return
 }
 
@@ -114,7 +117,8 @@ func (c *Context) Close() (err int) {
 // int rtlsdr_set_xtal_freq(rtlsdr_dev_t *dev, uint32_t rtl_freq, uint32_t tuner_freq);
 func (c *Context) SetXtalFreq(rtl_freq, tuner_freq int) (err int) {
 	return int(C.rtlsdr_set_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
-		C.uint32_t(rtl_freq), C.uint32_t(tuner_freq)))
+		C.uint32_t(rtl_freq),
+		C.uint32_t(tuner_freq)))
 }
 
 // Get crystal oscillator frequencies used for the RTL2832 and the tuner IC.
@@ -137,8 +141,10 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
 	s := make([]byte, 257)
-	err = int(C.rtlsdr_get_usb_strings((*C.rtlsdr_dev_t)(c.dev), (*C.char)(unsafe.Pointer(&m[0])),
-		(*C.char)(unsafe.Pointer(&p[0])), (*C.char)(unsafe.Pointer(&s[0]))))
+	err = int(C.rtlsdr_get_usb_strings((*C.rtlsdr_dev_t)(c.dev),
+		(*C.char)(unsafe.Pointer(&m[0])),
+		(*C.char)(unsafe.Pointer(&p[0])),
+		(*C.char)(unsafe.Pointer(&s[0]))))
 	return string(m), string(p), string(s), err
 }
 
@@ -146,7 +152,8 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 //
 // int rtlsdr_set_center_freq(rtlsdr_dev_t *dev, uint32_t freq);
 func (c *Context) SetCenterFreq(freq int) (err int) {
-	return int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev), C.uint32_t(freq)))
+	return int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev),
+		C.uint32_t(freq)))
 }
 
 // Get actual frequency the device is tuned to.
@@ -164,7 +171,8 @@ func (c *Context) GetCenterFreq() (freq int) {
 //
 // int rtlsdr_set_freq_correction(rtlsdr_dev_t *dev, int ppm);
 func (c *Context) SetFreqCorrection(ppm int) (err int) {
-	return int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(c.dev), C.int(ppm)))
+	return int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(c.dev),
+		C.int(ppm)))
 }
 
 // Get actual frequency correction value of the device.
@@ -195,7 +203,8 @@ func (c *Context) GetTunerGains() (gains []int) {
 		(*C.int)(unsafe.Pointer(uintptr(0)))))
 	gains = make([]int, count)
 	if count != 0 {
-		C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), (*C.int)(unsafe.Pointer(&gains[0])))
+		C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
+			(*C.int)(unsafe.Pointer(&gains[0])))
 	}
 	return
 }
@@ -210,7 +219,8 @@ func (c *Context) GetTunerGains() (gains []int) {
 //
 // int rtlsdr_set_tuner_gain(rtlsdr_dev_t *dev, int gain);
 func (c *Context) SetTunerGain(gain int) (err int) {
-	return int(C.rtlsdr_set_tuner_gain((*C.rtlsdr_dev_t)(c.dev), C.int(gain)))
+	return int(C.rtlsdr_set_tuner_gain((*C.rtlsdr_dev_t)(c.dev),
+		C.int(gain)))
 }
 
 // Get actual gain the device is configured to.
@@ -230,7 +240,8 @@ func (c *Context) GetTunerGain() (gain int) {
 // int rtlsdr_set_tuner_if_gain(rtlsdr_dev_t *dev, int stage, int gain);
 func (c *Context) SetTunerIfGain(stage, gain int) (err int) {
 	return int(C.rtlsdr_set_tuner_if_gain((*C.rtlsdr_dev_t)(c.dev),
-		C.int(stage), C.int(gain)))
+		C.int(stage),
+		C.int(gain)))
 }
 
 // Set the gain mode (automatic/manual) for the device.
@@ -303,8 +314,10 @@ func (c *Context) ResetBuffer() (err int) {
 
 // int rtlsdr_read_sync(rtlsdr_dev_t *dev, void *buf, int len, int *n_read);
 func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
-	err = int(C.rtlsdr_read_sync((*C.rtlsdr_dev_t)(c.dev), (unsafe.Pointer(&buf[0])),
-		C.int(len), (*C.int)(unsafe.Pointer(&n_read))))
+	err = int(C.rtlsdr_read_sync((*C.rtlsdr_dev_t)(c.dev),
+		(unsafe.Pointer(&buf[0])),
+		C.int(len),
+		(*C.int)(unsafe.Pointer(&n_read))))
 	return
 }
 
@@ -320,7 +333,8 @@ type ReadAsyncCb_T func(buf []uint8, len uint32, userdata interface{})
 // default buffer length (16 * 32 * 512).
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
-func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{}, buf_num, buf_len int) (n_read int, err int) {
+func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{},
+	buf_num, buf_len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&f)),
 		unsafe.Pointer(userdata),
