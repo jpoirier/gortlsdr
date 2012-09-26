@@ -11,8 +11,9 @@ import (
 
 // TODO: pass the channel via the callback UserCtx
 var c1 = make(chan int)
+var dev *rtl.Context
 
-func Rtlsdr_callback(buf *int8, length uint32, userctx rtl.UserCtx) {
+func rtlsdr_callback(buf []int8, userctx rtl.UserCtx) {
 	// c buffer to go slice without copying the data
 	var buffer []uint8
 	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
@@ -23,6 +24,7 @@ func Rtlsdr_callback(buf *int8, length uint32, userctx rtl.UserCtx) {
 	log.Printf("C buf length: %d\n", length)
 	log.Printf("Go buffer length: %d\n", len(buffer))
 
+	log.Printf("Calling CancelAsync\n")
 	if ok := dev.CancelAsync(); ok != rtl.Success {
 		log.Fatal("ReadSync failed\n")
 	}
@@ -44,7 +46,6 @@ func main() {
 
 	log.Printf("Using device indx %d\n", 0)
 	var ok int
-	var dev *rtl.Context
 	if dev, ok = rtl.Open(0); ok != rtl.Success {
 		log.Fatal("Failed to open the device\n")
 	}
@@ -136,29 +137,29 @@ func main() {
 		log.Fatal("Buffer reset failed, exiting\n")
 	}
 
-	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
-	if n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength); ok != rtl.Success {
-		log.Fatal("ReadSync failed, exiting\n")
-	} else {
-		if n_read < rtl.DefaultBufLength {
-			log.Fatal("ReadSync short read, samples lost, exiting\n")
-		}
-	}
+	// var buffer []byte = make([]uint8, rtl.DefaultBufLength)
+	// if n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength); ok != rtl.Success {
+	// 	log.Fatal("ReadSync failed, exiting\n")
+	// } else {
+	// 	if n_read < rtl.DefaultBufLength {
+	// 		log.Fatal("ReadSync short read, samples lost, exiting\n")
+	// 	}
+	// }
 
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	if ok = dev.SetTestMode(0); ok < 1 {
-		log.Printf("SetTestMode to off failed with error code: %d\n", ok)
-		log.Fatal("")
-	}
+	// if ok = dev.SetTestMode(0); ok < 1 {
+	// 	log.Printf("SetTestMode to off failed with error code: %d\n", ok)
+	// 	log.Fatal("")
+	// }
 
 	log.Println("Calling ReadAsync")
-	if ok := dev.ReadAsync(Rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
+	if ok := dev.ReadAsync(rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
-	log.Println("ReadAsync setup")
+	log.Println("ReadAsync returned")
 
 	//_ = <-c1 // wait for signal
 

@@ -25,9 +25,8 @@ extern void go_callback(char* p1, uint32_t p2, void* p3);
 import "C"
 
 import (
-	// "fmt"
-	//	"log"
-	//	"reflect"
+	// "log"
+	"reflect"
 	"unsafe"
 )
 
@@ -116,15 +115,22 @@ var TypeMap = map[int]string{
 }
 
 // typedef void(*rtlsdr_read_async_cb_t)(unsigned char *buf, uint32_t len, void *ctx);
-type ReadAsyncCb_T func(*int8, uint32, UserCtx)
+type ReadAsyncCb_T func([]int8, UserCtx)
 
-var clientCB ReadAsyncCb_T
+var clientCb ReadAsyncCb_T
+var clientCtx UserCtx
 
 //export go_callback
 func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
+	var buffer []int8
+	length := int(p2)
+	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
+	b.Cap = length
+	b.Len = length
+	b.Data = uintptr(unsafe.Pointer(p1))
 	// func go_callback(pF unsafe.Pointer, p1 *C.uint8, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// f := *(*func(*C.uint8, uint32_t(p2), UserCtx(unsafe.Pointer))(pF)
-	clientCB((*int8)(p1), uint32(p2), UserCtx(p3))
+	clientCb(buffer, clientCtx)
 }
 
 var GoCallback = go_callback
@@ -449,7 +455,8 @@ func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 // rtlsdr_read_async returns 0 on success
 func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
 	buf_len int) (err int) {
-	clientCB = f
+	clientCb = f
+	clientCtx = userctx
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		//(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&GoCallback)),
 		(C.rtlsdr_read_async_cb_t)(*(*unsafe.Pointer)(unsafe.Pointer(&GoCallback))),
