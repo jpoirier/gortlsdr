@@ -453,7 +453,8 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
 	clientCB = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&GoCallback)),
-		unsafe.Pointer(userctx),
+		//unsafe.Pointer(userctx),
+		nil,
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
 	return

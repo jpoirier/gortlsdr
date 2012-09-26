@@ -155,4 +155,7 @@ func main() {
 	}
 
 	log.Printf("Closing...\n")
+	if ok = dev.CancelAsync(); ok != rtl.Success {
+		log.Fatal("ReadSync failed, exiting\n")
+	}
 }
