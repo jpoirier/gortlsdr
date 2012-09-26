@@ -149,13 +149,25 @@ func main() {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
 
+	x := 0
+	for {
+		if rtl.Test == 1 {
+			break
+		}
+
+		for {
+			x++
+			if x == 10000 {
+				break
+			}
+		}
+
+	}
+
 	//_ = <-c1 // wait for signal
-	// if ok = dev.CancelAsync(); ok != rtl.Success {
-	// 	log.Fatal("ReadSync failed, exiting\n")
-	// }
+	if ok = dev.CancelAsync(); ok != rtl.Success {
+		log.Fatal("ReadSync failed, exiting\n")
+	}
 
 	log.Printf("Closing...\n")
-	// if ok = dev.CancelAsync(); ok != rtl.Success {
-	// 	log.Fatal("ReadSync failed, exiting\n")
-	// }
 }
