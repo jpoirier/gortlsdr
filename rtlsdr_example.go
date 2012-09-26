@@ -10,6 +10,9 @@ import (
 func main() {
 	indx := -1
 	c := rtl.GetDeviceCount()
+	if c == 0 {
+		log.Fatal("No devices found.\n")
+	}
 
 	for i := 0; i < c; i++ {
 		m, p, s, err := rtl.GetDeviceUsbStrings(i)

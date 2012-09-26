@@ -59,8 +59,8 @@ const (
 // GetDeviceCount gets the number of valid USB dongles detected.
 //
 // uint32_t rtlsdr_get_device_count(void);
-func GetDeviceCount() (count uint32) {
-	return uint32(C.rtlsdr_get_device_count())
+func GetDeviceCount() (count int) {
+	return int(C.rtlsdr_get_device_count())
 
 }
 
@@ -68,7 +68,7 @@ func GetDeviceCount() (count uint32) {
 // e.g. from an index returned from calling GainValues.
 //
 // const char* rtlsdr_get_device_name(uint32_t index);
-func GetDeviceName(index uint32) (name string) {
+func GetDeviceName(index int) (name string) {
 	return C.GoString(C.rtlsdr_get_device_name(C.uint32_t(index)))
 }
 
