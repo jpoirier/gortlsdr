@@ -12,7 +12,7 @@ import (
 var c1 = make(chan int)
 var dev *rtl.Context
 
-func rtlsdr_callback(buf []int8, userctx rtl.UserCtx) {
+func RtlsdrCallback(buf []int8, userctx rtl.UserCtx) {
 	// log.Printf("Go buffer length: %d\n", len(buf))
 	c1 <- 1 // tell main we're done
 }
@@ -150,7 +150,7 @@ func main() {
 	// }
 	go async_read_stop()
 	log.Println("Calling ReadAsync")
-	if ok := dev.ReadAsync(rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
+	if ok := dev.ReadAsync(RtlsdrCallback, nil, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
