@@ -5,6 +5,7 @@ package main
 import (
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
+	"reflect"
 	"runtime"
 )
 
@@ -12,7 +13,16 @@ import (
 var c1 = make(chan int)
 var dev *rtl.Context
 
-func RtlsdrCallback(buf []int8, userctx rtl.UserCtx) {
+func RtlsdrCallback(buf *int8, length uint32, userctx rtl.UserCtx) {
+	// c buffer to go slice without copying
+	var buffer []uint8
+	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
+	b.Cap = int(length)
+	b.Len = int(length)
+	b.Data = uintptr(unsafe.Pointer(buf))
+
+	log.Printf("C buf length: %d\n", length)
+	log.Printf("Go buffer length: %d\n", len(buffer))
 	// log.Printf("Go buffer length: %d\n", len(buf))
 	c1 <- 1 // tell main we're done
 }
@@ -150,8 +160,7 @@ func main() {
 	// }
 	go async_read_stop()
 	log.Println("Calling ReadAsync")
-	var ctx rtl.UserCtx
-	if ok := dev.ReadAsync(RtlsdrCallback, ctx, rtl.DefaultAsyncBufNumber,
+	if ok := dev.ReadAsync(RtlsdrCallback, nil, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
