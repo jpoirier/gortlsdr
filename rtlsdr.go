@@ -119,15 +119,12 @@ var TypeMap = map[int]string{
 type ReadAsyncCb_T func(*int8, uint32, UserCtx)
 
 var clientCB ReadAsyncCb_T
-var Test int
 
 //export go_callback
 func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// func go_callback(pF unsafe.Pointer, p1 *C.uint8, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// f := *(*func(*C.uint8, uint32_t(p2), UserCtx(unsafe.Pointer))(pF)
-	//clientCB((*int8)(p1), uint32(p2), UserCtx(p3))
-	//fmt.Println("hello from the callback")
-	Test = 1
+	clientCB((*int8)(p1), uint32(p2), UserCtx(p3))
 }
 
 var GoCallback = go_callback

@@ -23,7 +23,11 @@ func Rtlsdr_callback(buf *int8, length uint32, userctx rtl.UserCtx) {
 	log.Printf("C buf length: %d\n", length)
 	log.Printf("Go buffer length: %d\n", len(buffer))
 
-	c1 <- 1 // tell main we're done
+	if ok := dev.CancelAsync(); ok != rtl.Success {
+		log.Fatal("ReadSync failed\n")
+	}
+
+	//c1 <- 1 // tell main we're done
 }
 
 func main() {
@@ -144,30 +148,19 @@ func main() {
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
+	if ok = dev.SetTestMode(0); ok < 1 {
+		log.Printf("SetTestMode to off failed with error code: %d\n", ok)
+		log.Fatal("")
+	}
+
+	log.Println("Calling ReadAsync")
 	if ok := dev.ReadAsync(Rtlsdr_callback, nil, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
-
-	x := 0
-	for {
-		if rtl.Test == 1 {
-			break
-		}
-
-		for {
-			x++
-			if x == 10000 {
-				break
-			}
-		}
-
-	}
+	log.Println("ReadAsync setup")
 
 	//_ = <-c1 // wait for signal
-	if ok = dev.CancelAsync(); ok != rtl.Success {
-		log.Fatal("ReadSync failed, exiting\n")
-	}
 
 	log.Printf("Closing...\n")
 }
