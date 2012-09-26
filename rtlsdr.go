@@ -60,7 +60,7 @@ type Context struct {
 	dev *C.rtlsdr_dev_t
 }
 
-type UserCtx interface{}
+type UserCtx *interface{}
 
 const (
 	/* tuner types */
@@ -432,7 +432,7 @@ type ReadAsyncCb_T func(buf *[]uint8, len uint32, userdata interface{})
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
 // rtlsdr_read_async returns 0 on success
-func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx,
+func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx,
 	buf_num, buf_len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&f)),
