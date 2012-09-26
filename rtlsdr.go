@@ -27,10 +27,6 @@ import (
 	"unsafe"
 )
 
-type Void interface{}
-
-// var mydata *Void
-
 var PackageVersion string = "v0.1"
 
 type Context struct {
@@ -194,7 +190,9 @@ func (c *Context) GetTunerType() (rtlsdr_tuner int) {
 //
 // int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains);
 func (c *Context) GetTunerGains() (gains []int) {
-	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
+	//	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
+	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
+		(*C.int)(unsafe.Pointer(uintptr(0)))))
 	gains = make([]int, count)
 	if count != 0 {
 		C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), (*C.int)(unsafe.Pointer(&gains[0])))
@@ -311,7 +309,7 @@ func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 }
 
 // typedef void(*rtlsdr_read_async_cb_t)(unsigned char *buf, uint32_t len, void *ctx);
-type ReadAsyncCb_T func(buf []uint8, len uint32)
+type ReadAsyncCb_T func(buf []uint8, len uint32, userdata interface{})
 
 // Read samples from the device asynchronously. This function will block until
 // it is being canceled using rtlsdr_cancel_async()
@@ -322,10 +320,10 @@ type ReadAsyncCb_T func(buf []uint8, len uint32)
 // default buffer length (16 * 32 * 512).
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
-func (c *Context) ReadAsync(f ReadAsyncCb_T, ctx *Void, buf_num, buf_len int) (n_read int, err int) {
+func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{}, buf_num, buf_len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&f)),
-		unsafe.Pointer(ctx),
+		unsafe.Pointer(userdata),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
 	return
