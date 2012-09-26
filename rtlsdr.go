@@ -123,13 +123,13 @@ var clientCtx UserCtx
 //export go_callback
 func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// c buffer to go slice without copying
-	var buffer []int8
+	var buf []int8
 	length := int(p2)
-	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
+	b := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
 	b.Cap = length
 	b.Len = length
 	b.Data = uintptr(unsafe.Pointer(p1))
-	clientCb(buffer, clientCtx)
+	clientCb(buf, clientCtx)
 }
 
 var GoCallback = go_callback
@@ -459,8 +459,7 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		//(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&GoCallback)),
 		(C.rtlsdr_read_async_cb_t)(*(*unsafe.Pointer)(unsafe.Pointer(&GoCallback))),
-		//unsafe.Pointer(userctx),
-		nil,
+		unsafe.Pointer(userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
 	return
