@@ -25,7 +25,7 @@ extern void go_callback(char* p1, uint32_t p2, void* p3);
 import "C"
 
 import (
-	"fmt"
+	// "fmt"
 	//	"log"
 	//	"reflect"
 	"unsafe"
@@ -124,8 +124,8 @@ var clientCB ReadAsyncCb_T
 func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// func go_callback(pF unsafe.Pointer, p1 *C.uint8, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// f := *(*func(*C.uint8, uint32_t(p2), UserCtx(unsafe.Pointer))(pF)
-	//clientCB((*int8)(p1), uint32(p2), UserCtx(p3))
-	fmt.Println("hello from the callback")
+	clientCB((*int8)(p1), uint32(p2), UserCtx(p3))
+	//fmt.Println("hello from the callback")
 }
 
 var GoCallback = go_callback
@@ -452,7 +452,8 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
 	buf_len int) (err int) {
 	clientCB = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
-		(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&GoCallback)),
+		//(C.rtlsdr_read_async_cb_t)(unsafe.Pointer(&GoCallback)),
+		(C.rtlsdr_read_async_cb_t)(*(*unsafe.Pointer)(unsafe.Pointer(&GoCallback))),
 		//unsafe.Pointer(userctx),
 		nil,
 		C.uint32_t(buf_num),
