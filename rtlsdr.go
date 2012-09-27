@@ -131,7 +131,7 @@ func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// b.Data = uintptr(unsafe.Pointer((*int8)(p1)))
 	// clientCb(buf, clientCtx)
 	//clientCb(buf, clientCtx)
-	clientCb((*int8)(p1), uint32(p2), UserCtx(p3))
+	clientCb((*int8)(p1), uint32(p2), (*UserCtx)(p3))
 }
 
 var GoCallback = go_callback
