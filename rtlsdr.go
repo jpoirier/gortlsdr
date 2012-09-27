@@ -454,12 +454,12 @@ func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 //
 // int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx, uint32_t buf_num, uint32_t buf_len);
 // rtlsdr_read_async returns 0 on success
-func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
+func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, buf_num,
 	buf_len int) (err int) {
 	clientCb = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(*(*unsafe.Pointer)(unsafe.Pointer(&GoCallback))),
-		unsafe.Pointer(&userctx),
+		unsafe.Pointer(userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
 	return
