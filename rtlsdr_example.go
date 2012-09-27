@@ -14,7 +14,7 @@ import (
 var c1 = make(chan int)
 var dev *rtl.Context
 
-func RtlsdrCallback(buf *int8, length uint32, userctx rtl.UserCtx) {
+func RtlsdrCallback(buf *int8, length uint32, userctx *rtl.UserCtx) {
 	// c buffer to go slice without copying
 	// var buffer []uint8
 	// b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
