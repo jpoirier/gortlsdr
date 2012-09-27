@@ -63,7 +63,7 @@ type Context struct {
 	dev *C.rtlsdr_dev_t
 }
 
-type UserCtx *interface{}
+type UserCtx interface{}
 
 const (
 	/* tuner types */
@@ -459,7 +459,7 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx UserCtx, buf_num,
 	clientCb = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(*(*unsafe.Pointer)(unsafe.Pointer(&GoCallback))),
-		nil,
+		unsafe.Pointer(&userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
 	return

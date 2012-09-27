@@ -5,8 +5,9 @@ package main
 import (
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
-	"reflect"
+	// "reflect"
 	"runtime"
+	// "unsafe"
 )
 
 // TODO: pass the channel via the callback UserCtx
@@ -15,16 +16,17 @@ var dev *rtl.Context
 
 func RtlsdrCallback(buf *int8, length uint32, userctx rtl.UserCtx) {
 	// c buffer to go slice without copying
-	var buffer []uint8
-	b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
-	b.Cap = int(length)
-	b.Len = int(length)
-	b.Data = uintptr(unsafe.Pointer(buf))
+	// var buffer []uint8
+	// b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
+	// b.Cap = int(length)
+	// b.Len = int(length)
+	// b.Data = uintptr(unsafe.Pointer(buf))
 
-	log.Printf("C buf length: %d\n", length)
-	log.Printf("Go buffer length: %d\n", len(buffer))
+	// log.Printf("C buf length: %d\n", length)
+	// log.Printf("Go buffer length: %d\n", len(buffer))
 	// log.Printf("Go buffer length: %d\n", len(buf))
-	c1 <- 1 // tell main we're done
+	//	c1 <- 1 // tell main we're done
+	log.Printf("hello...\n")
 }
 
 func async_read_stop() {
@@ -158,9 +160,10 @@ func main() {
 	// 	log.Printf("SetTestMode to off failed with error code: %d\n", ok)
 	// 	log.Fatal("")
 	// }
-	go async_read_stop()
+	//go async_read_stop()
 	log.Println("Calling ReadAsync")
-	if ok := dev.ReadAsync(RtlsdrCallback, nil, rtl.DefaultAsyncBufNumber,
+	var userctx *rtl.UserCtx
+	if ok := dev.ReadAsync(RtlsdrCallback, userctx, rtl.DefaultAsyncBufNumber,
 		rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
