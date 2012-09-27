@@ -163,8 +163,7 @@ func main() {
 	//go async_read_stop()
 	log.Println("Calling ReadAsync")
 	var userctx rtl.UserCtx
-	if ok = dev.ReadAsync(RtlsdrCallback, &userctx, rtl.DefaultAsyncBufNumber,
-		rtl.DefaultBufLength); ok != rtl.Success {
+	if ok = dev.ReadAsync(RtlsdrCallback, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
 	log.Println("ReadAsync returned")
