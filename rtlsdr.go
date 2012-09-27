@@ -115,7 +115,7 @@ var TypeMap = map[int]string{
 }
 
 //type ReadAsyncCb_T func([]int8, UserCtx)
-type ReadAsyncCb_T func(*int8, uint32, UserCtx)
+type ReadAsyncCb_T func(*int8, uint32, *UserCtx)
 
 var clientCb ReadAsyncCb_T
 var clientCtx UserCtx
