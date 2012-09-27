@@ -25,7 +25,7 @@ extern void go_callback(char* p1, uint32_t p2, void* p3);
 import "C"
 
 import (
-	// "log"
+	"log"
 	// "reflect"
 	"unsafe"
 )
@@ -132,6 +132,7 @@ func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// clientCb(buf, clientCtx)
 	//clientCb(buf, clientCtx)
 	clientCb((*int8)(p1), uint32(p2), (*UserCtx)(p3))
+	log.Printf("called client cb...\n")
 }
 
 var GoCallback = go_callback

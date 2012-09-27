@@ -14,7 +14,7 @@ import (
 var c1 = make(chan int)
 var dev *rtl.Context
 
-func RtlsdrCallback(buf *int8, length uint32, userctx *rtl.UserCtx) {
+func rtlsdrCallback(buf *int8, length uint32, userctx *rtl.UserCtx) {
 	// c buffer to go slice without copying
 	// var buffer []uint8
 	// b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
@@ -163,7 +163,7 @@ func main() {
 	//go async_read_stop()
 	log.Println("Calling ReadAsync")
 	var userctx rtl.UserCtx
-	if ok = dev.ReadAsync(RtlsdrCallback, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength); ok != rtl.Success {
+	if ok = dev.ReadAsync(rtlsdrCallback, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength); ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
 	log.Println("ReadAsync returned")
