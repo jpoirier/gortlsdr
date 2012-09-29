@@ -7,9 +7,14 @@
 //
 package rtlsdr
 
-// #cgo LDFLAGS: -lrtlsdr
-// #include <rtl-sdr.h>
 /*
+#cgo linux LDFLAGS: -lrtlsdr
+#cgo darwin LDFLAGS: -lrtlsdr
+#cgo windows CFLAGS: -IC:/WINDOWS/system32
+#cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
+
+#include <rtl-sdr.h>
+
 extern void go_callback(char* p1, uint32_t p2, void* p3);
 */
 import "C"
