@@ -3,17 +3,7 @@
 // that can be found in the LICENSE file.
 
 // Package gortlsdr wraps rtl-sdr, which turns your Realtek RTL2832 based
-// DVB dongle into a SDR receiver
-//
-// The package is low level and, for the most part, is one-to-one with the
-// exported C functions it wraps. Clients would typically build instrument
-// drivers around the package but it can also be used directly.
-//
-// Lots of miscellaneous NI-488.2 information:
-//     http://sdr.osmocom.org/trac/wiki/rtl-sdr
-//
-//
-// Direct download: http://github.com/jpoirier/gortlsdr
+// DVB dongle into a SDR receiver.
 //
 package rtlsdr
 
@@ -25,39 +15,11 @@ extern void go_callback(char* p1, uint32_t p2, void* p3);
 import "C"
 
 import (
-	"log"
-	// "reflect"
+	"reflect"
 	"unsafe"
 )
 
 var PackageVersion string = "v0.1"
-
-/*
-TODO
-----
-The rtlsdr library returns inconsistent error codes:
-	o
-	o rtlsdr_read_sync - returns libusb error codes but ut steps on one of them (-1)
-	o rtlsdr_set_xtal_freq - returns libusb error codes but steps on some of them (-1, -2, -3)
-	o rtlsdr_get_center_freq - returns 0 on error, should be non-zero, e.g. -1?
-	o rtlsdr_get_tuner_gain - returns 0 on error, should be non-zero, e.g. -1?
-	o rtlsdr_get_sample_rate - returns 0 on error, should be non-zero, e.g. -1?
-	o rtlsdr_set_testmode - returns libusb error codes but ut steps on one of them (-1)
-	o rtlsdr_get_freq_correction - returns 0 on error, should be non-zero, e.g. -1?
-	o
-	o functions that return libusb_control_transfer's return value should state
-	  error values as less than zero
-	o rtlsdr_set_center_freq - rtlsdr_set_if_freq returns negative values on error
-	  or zero or more bytes written (it calls libusb_control_transfer) on success
-	  and dev->tuner->set_freq returns a zero on success, but rtlsdr_set_center_freq
-	  performs a 'not true' check prior to setting dev->freq, which incorrectly
-	  causes the freq to not get set when direct_sampling is being performed.
-
-	GetCenterFreq
-	GetFreqCorrection
-	GetTunerGain
-	GetSampleRate
-*/
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
@@ -114,25 +76,20 @@ var TypeMap = map[int]string{
 	TunerR820T:   "RTLSDR_TUNER_R820T",
 }
 
-//type ReadAsyncCb_T func([]int8, UserCtx)
-type ReadAsyncCb_T func(*int8, uint32, *UserCtx)
+type ReadAsyncCb_T func([]int8, UserCtx)
 
 var clientCb ReadAsyncCb_T
-var clientCtx UserCtx
 
 //export go_callback
 func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// c buffer to go slice without copying
-	// var buf []int8
-	// length := int(p2)
-	// b := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
-	// b.Cap = length
-	// b.Len = length
-	// b.Data = uintptr(unsafe.Pointer((*int8)(p1)))
-	// clientCb(buf, clientCtx)
-	//clientCb(buf, clientCtx)
-	clientCb((*int8)(p1), uint32(p2), (*UserCtx)(p3))
-	log.Printf("called client cb...\n")
+	var buf []int8
+	length := int(p2)
+	b := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
+	b.Cap = length
+	b.Len = length
+	b.Data = uintptr(unsafe.Pointer((*int8)(p1)))
+	clientCb(buf, (*UserCtx)(p3))
 }
 
 var GoCallback = go_callback
@@ -463,7 +420,6 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, buf_num,
 		unsafe.Pointer(userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
-	log.Printf("returning...\n")
 	return
 }
 

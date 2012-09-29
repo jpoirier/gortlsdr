@@ -5,41 +5,30 @@ package main
 import (
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
-	// "reflect"
 	"runtime"
 	// "unsafe"
 )
 
 // TODO: pass the channel via the callback UserCtx
-var c1 = make(chan int)
-var dev *rtl.Context
+var c1 = make(chan bool)
 
-func rtlsdrCallback(buf *int8, length uint32, userctx *rtl.UserCtx) {
-	// c buffer to go slice without copying
-	// var buffer []uint8
-	// b := (*reflect.SliceHeader)((unsafe.Pointer(&buffer)))
-	// b.Cap = int(length)
-	// b.Len = int(length)
-	// b.Data = uintptr(unsafe.Pointer(buf))
-
-	// log.Printf("C buf length: %d\n", length)
-	// log.Printf("Go buffer length: %d\n", len(buffer))
-	// log.Printf("Go buffer length: %d\n", len(buf))
-	//	c1 <- 1 // tell main we're done
-	log.Printf("hello...\n")
+func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
+	log.Printf("Length of buffer: %d", len(buf))
+	c1 <- true // tell main we're done
 }
 
-func async_read_stop() {
-	_ = <-c1 // wait for signal
+func async_stop(dev *rtl.Context) {
+	<-c1 // wait for a signal
 
-	log.Printf("Calling CancelAsync\n")
+	log.Println("Received signal form callback, calling CancelAsync\n")
 	if ok := dev.CancelAsync(); ok != rtl.Success {
 		log.Fatal("ReadSync failed\n")
 	}
 }
 
 func main() {
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(3)
+
 	if c := rtl.GetDeviceCount(); c == 0 {
 		log.Fatal("No devices found.\n")
 	} else {
@@ -53,6 +42,7 @@ func main() {
 
 	log.Printf("Using device indx %d\n", 0)
 	var ok int
+	var dev *rtl.Context
 	if dev, ok = rtl.Open(0); ok != rtl.Success {
 		log.Fatal("Failed to open the device\n")
 	}
@@ -131,8 +121,6 @@ func main() {
 		func (c *Context) SetTunerGainMode(manual int)
 		func (c *Context) SetAgcMode(on int) (err int)
 		func (c *Context) SetDirectSampling(on int) (err int)
-		func (c *Context) ReadAsync(f ReadAsyncCb_T, userdata *interface{}, buf_num, buf_len int) (n_read int, err int)
-		func (c *Context) CancelAsync() (err int)
 	*/
 
 	if ok = dev.SetTestMode(1); ok < 1 {
@@ -144,31 +132,37 @@ func main() {
 		log.Fatal("Buffer reset failed, exiting\n")
 	}
 
-	// var buffer []byte = make([]uint8, rtl.DefaultBufLength)
-	// if n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength); ok != rtl.Success {
-	// 	log.Fatal("ReadSync failed, exiting\n")
-	// } else {
-	// 	if n_read < rtl.DefaultBufLength {
-	// 		log.Fatal("ReadSync short read, samples lost, exiting\n")
-	// 	}
-	// }
+	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
+	if n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength); ok != rtl.Success {
+		log.Fatal("ReadSync failed, exiting\n")
+	} else {
+		if n_read < rtl.DefaultBufLength {
+			log.Fatal("ReadSync short read, samples lost, exiting\n")
+		}
+	}
 
 	log.Println("ReadSync successful")
 	// log.Println(buffer)
 
-	// if ok = dev.SetTestMode(0); ok < 1 {
-	// 	log.Printf("SetTestMode to off failed with error code: %d\n", ok)
-	// 	log.Fatal("")
-	// }
-	//go async_read_stop()
-	log.Println("Calling ReadAsync")
-	var userctx rtl.UserCtx
-	ok = dev.ReadAsync(rtlsdrCallback, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	if ok = dev.SetTestMode(0); ok < 1 {
+		log.Printf("SetTestMode to off failed with error code: %d\n", ok)
+		log.Fatal("")
+	}
+	/* 	Unusable on my system (OSX 10.7.5) due to a segfault caused by
+	a call to libusb_handle_events_timeout in the libusb library
+	from librtlsdr - it's a known issue.
 
+	// ReadAsync blocks until CancelAsync is called, so spawn
+	// a goroutine, running in a system thread, that waits
+	// for a signal from the callback function that it's
+	// done.
+	log.Println("Calling ReadAsync")
+	go async_stop()
+	var userctx rtl.UserCtx
+	ok = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 	if ok != rtl.Success {
 		log.Fatal("ReadAsync failed, exiting\n")
 	}
-	log.Println("ReadAsync returned")
-
+	*/
 	log.Printf("Closing...\n")
 }
