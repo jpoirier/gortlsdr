@@ -21,7 +21,7 @@ Supported Platforms:
 All functions in librtlsdr are accessible in the gortlsdr package, but note that ReadAsync can cause a segfault due to
 a known issue with libusb_handle_events_timeout in libusb.
 
-    go get -v github.com/kylelemons/gousb/lsusb
+    go get -v github.com/jpoirier/gortlsdr
 
 ## Examples
 See the rtlsdr_eample.go file.
