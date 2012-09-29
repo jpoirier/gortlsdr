@@ -2,7 +2,7 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-// Package gortlsdr wraps rtl-sdr, which turns your Realtek RTL2832 based
+// Package gortlsdr wraps librtlsdr, which turns your Realtek RTL2832 based
 // DVB dongle into a SDR receiver.
 //
 package rtlsdr
@@ -19,7 +19,7 @@ import (
 	"unsafe"
 )
 
-var PackageVersion string = "v0.1"
+var PackageVersion string = "v1.0"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
