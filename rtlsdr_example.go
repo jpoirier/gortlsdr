@@ -20,7 +20,7 @@ func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
 func async_stop(dev *rtl.Context) {
 	<-c1 // wait for a signal
 
-	log.Println("Received signal form callback, calling CancelAsync\n")
+	log.Println("Received signal to exit from the callback function, calling CancelAsync\n")
 	if ok := dev.CancelAsync(); ok != rtl.Success {
 		log.Fatal("ReadSync failed\n")
 	}
@@ -154,7 +154,7 @@ func main() {
 	// for a signal from the callback function that it's
 	// done.
 	log.Println("Calling ReadAsync")
-	go async_stop()
+	go async_stop(dev)
 	var userctx rtl.UserCtx
 	ok = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 	if ok != rtl.Success {
