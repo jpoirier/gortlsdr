@@ -217,12 +217,8 @@ func (c *Context) SetCenterFreq(freq int) (err int) {
 //
 // uint32_t rtlsdr_get_center_freq(rtlsdr_dev_t *dev);
 // rtlsdr_get_center_freq returns frequency in Hz or 0 on error
-func (c *Context) GetCenterFreq() (freq, err int) {
-	freq = int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
-	if freq == 0 {
-		err = Fail
-	}
-	return
+func (c *Context) GetCenterFreq() (freq int) {
+	return int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Set the frequency correction value for the device.
@@ -242,12 +238,8 @@ func (c *Context) SetFreqCorrection(ppm int) (err int) {
 //
 // int rtlsdr_get_freq_correction(rtlsdr_dev_t *dev);
 // rtlsdr_get_freq_correction returns 0 on error
-func (c *Context) GetFreqCorrection() (freq, err int) {
-	freq = int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
-	if freq == 0 {
-		err = Fail
-	}
-	return
+func (c *Context) GetFreqCorrection() (freq int) {
+	return int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Get the tuner type.
@@ -302,12 +294,8 @@ func (c *Context) SetTunerGain(gain int) (err int) {
 //
 // int rtlsdr_get_tuner_gain(rtlsdr_dev_t *dev);
 // rtlsdr_get_tuner_gain returns 0 on error or the gain in tenths of a dB
-func (c *Context) GetTunerGain() (gain, err int) {
-	gain = int(C.rtlsdr_get_tuner_gain((*C.rtlsdr_dev_t)(c.dev)))
-	if gain == 0 {
-		err = Fail
-	}
-	return
+func (c *Context) GetTunerGain() (gain int) {
+	return int(C.rtlsdr_get_tuner_gain((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Set the intermediate frequency gain for the device.
@@ -349,12 +337,8 @@ func (c *Context) SetSampleRate(rate int) (err int) {
 //
 // uint32_t rtlsdr_get_sample_rate(rtlsdr_dev_t *dev);
 // rtlsdr_get_sample_rate returns 0 on error or sample rate in Hz
-func (c *Context) GetSampleRate() (rate, err int) {
-	rate = int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
-	if rate == 0 {
-		err = Fail
-	}
-	return
+func (c *Context) GetSampleRate() (rate int) {
+	return int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // Enable test mode that returns an 8 bit counter instead of the samples.

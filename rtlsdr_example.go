@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
 	"runtime"
@@ -38,7 +39,7 @@ func main() {
 	} else {
 		for i := 0; i < c; i++ {
 			m, p, s, status := rtl.GetDeviceUsbStrings(i)
-			log.Printf("GetDeviceUsbStrings %s: %d, m: %s, p: %s, s: %s\n",
+			log.Printf("GetDeviceUsbStrings %s - m: %s, p: %s, s: %s\n",
 				rtl.Status[status], m, p, s)
 		}
 	}
@@ -57,44 +58,38 @@ func main() {
 	g, status := dev.GetTunerGains()
 	log.Printf("\tGetTunerGains %s\n", rtl.Status[status])
 	if status == rtl.Success {
-		for i, j := range g {
-			log.Printf("\t\tGain %d: %d\n", i, j)
+		fmt.Printf("\tGains: ")
+		for _, j := range g {
+			fmt.Printf("%d ", j)
 		}
+		fmt.Printf("\n")
 	}
 
-	rate, status := dev.GetSampleRate()
-	log.Printf("\tGetSampleRate %s - rate: %d\n", rtl.Status[status], rate)
+	log.Printf("\tSetSampleRate %s - rate: %d\n",
+		rtl.Status[dev.SetSampleRate(rtl.DefaultSampleRate)], rtl.DefaultSampleRate)
+	log.Printf("\tGetSampleRate: %d\n", dev.GetSampleRate())
 
-	status = dev.SetSampleRate(rtl.DefaultSampleRate)
-	log.Printf("\tSetSampleRate %s - rate: %d\n", rtl.Status[status], rtl.DefaultSampleRate)
+	// status = dev.SetXtalFreq(rtl_freq, tuner_freq)
+	// log.Printf("\tSetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
+	// 	rtl.Status[status], rtl_freq, tuner_freq)
 
 	rtl_freq, tuner_freq, status := dev.GetXtalFreq()
 	log.Printf("\tGetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
 		rtl.Status[status], rtl_freq, tuner_freq)
 
-	status = dev.SetXtalFreq(rtl_freq, tuner_freq)
-	log.Printf("\tSetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
-		rtl.Status[status], rtl_freq, tuner_freq)
-
-	freq, status := dev.GetCenterFreq()
-	log.Printf("\tGetCenterFreq %s - freq: %d\n", rtl.Status[status], freq)
-
 	// status = dev.SetCenterFreq(freq)
 	// if status < 0 {
-	// 	log.Printf("Error code: %d\n", status)
 	// 	log.Println("SetCenterFreq failed\n")
+	// 	log.Printf("Error code: %d\n", status)
 	// } else {
 	// 	log.Printf("Center freq set: %d\n", freq)
 	// }
 
-	freq, status = dev.GetFreqCorrection()
-	log.Printf("\tGetFreqCorrection %s - freq: %d\n", rtl.Status[status], freq)
-
-	rtlsdr_tuner := dev.GetTunerType()
-	log.Printf("\tGetTunerType %s - tuner type: %d\n", rtl.Status[status], rtl.TunerType[rtlsdr_tuner])
+	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
+	log.Printf("\tGetFreqCorrection: %d\n", dev.GetFreqCorrection())
+	log.Printf("\tGetTunerType: %s\n", rtl.TunerType[dev.GetTunerType()])
 
 	/*
-
 		func (c *Context) SetFreqCorrection(ppm int) (err int)
 		func (c *Context) SetTunerGain(gain int) (err int)
 		func (c *Context) SetTunerIfGain(stage, gain int) (err int)
@@ -104,13 +99,12 @@ func main() {
 	*/
 
 	if status = dev.SetTestMode(1); status < 1 {
-		log.Printf("\tSetTestMode '1' Fail - error code: %d\n", status)
+		log.Printf("\tSetTestMode 'On' Failed - error code: %d\n", status)
 	} else {
-		log.Printf("\tSetTestMode Success\n")
+		log.Printf("\tSetTestMode 'On' Successful\n")
 	}
 
-	status = dev.ResetBuffer()
-	log.Printf("\tResetBuffer %s\n", rtl.Status[status])
+	log.Printf("\tResetBuffer %s\n", rtl.Status[dev.ResetBuffer()])
 
 	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
 	n_read, status := dev.ReadSync(buffer, rtl.DefaultBufLength)
@@ -122,9 +116,9 @@ func main() {
 	}
 
 	if status = dev.SetTestMode(1); status < 1 {
-		log.Printf("\tSetTestMode '0' Fail - error code: %d\n", status)
+		log.Printf("\tSetTestMode 'Off' Fail - error code: %d\n", status)
 	} else {
-		log.Printf("\tSetTestMode '0' Success\n")
+		log.Printf("\tSetTestMode 'Off' Success\n")
 	}
 
 	/*
