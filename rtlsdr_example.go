@@ -9,109 +9,89 @@ import (
 	// "unsafe"
 )
 
-// TODO: pass the channel via the callback UserCtx
+// TODO: pass chan to the callback function as a *UserCtx
 var c1 = make(chan bool)
 
 func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
-	log.Printf("Length of buffer: %d", len(buf))
-	c1 <- true // tell main we're done
+	log.Printf("Length of async-read buffer: %d", len(buf))
+	c1 <- true // async-read done signal
 }
 
 func async_stop(dev *rtl.Context) {
-	<-c1 // wait for a signal
+	<-c1 // async-read done signal
 
-	log.Println("Received signal to exit from the callback function, calling CancelAsync\n")
-	if ok := dev.CancelAsync(); ok != rtl.Success {
-		log.Fatal("ReadSync failed\n")
+	log.Println("Received async-read done, calling CancelAsync\n")
+	if status := dev.CancelAsync(); status != rtl.Success {
+		log.Println("CancelAsync failed\n")
+	} else {
+		log.Println("CancelAsync successful\n")
 	}
 }
 
 func main() {
 	runtime.GOMAXPROCS(2)
+	var status int
+	var dev *rtl.Context
 
 	if c := rtl.GetDeviceCount(); c == 0 {
-		log.Fatal("No devices found.\n")
+		log.Fatal("No devices found, exiting.\n")
 	} else {
 		for i := 0; i < c; i++ {
-			m, p, s, err := rtl.GetDeviceUsbStrings(i)
-			log.Printf("Device USB Striing - err: %d, m: %s, p: %s, s: %s\n", err, m, p, s)
+			m, p, s, status := rtl.GetDeviceUsbStrings(i)
+			log.Printf("GetDeviceUsbStrings %s: %d, m: %s, p: %s, s: %s\n",
+				rtl.Status[status], m, p, s)
 		}
 	}
 
-	log.Printf("Device name: %s\n", rtl.GetDeviceName(0))
+	log.Printf("===== Device name: %s =====\n", rtl.GetDeviceName(0))
+	log.Printf("===== Running tests using device indx: %d =====\n", 0)
 
-	log.Printf("Using device indx %d\n", 0)
-	var ok int
-	var dev *rtl.Context
-	if dev, ok = rtl.Open(0); ok != rtl.Success {
-		log.Println("Failed to open the device\n")
+	if dev, status = rtl.Open(0); status != rtl.Success {
+		log.Fatal("\tOpen Failed, exiting\n")
 	}
 	defer dev.Close()
 
-	if m, p, s, ok := dev.GetUsbStrings(); ok != rtl.Success {
-		log.Println("GetUsbStrings failed, exiting\n")
-	} else {
-		log.Printf("USB strings - m: %s, p: %s, s: %s\n", m, p, s)
-	}
+	m, p, s, status := dev.GetUsbStrings()
+	log.Printf("\tGetUsbStrings %s - m: %s, p: %s, s: %s\n", rtl.Status[status], m, p, s)
 
-	if g, ok := dev.GetTunerGains(); ok != rtl.Success {
-		log.Println("GetTunerGains failed, exiting\n")
-	} else {
+	g, status := dev.GetTunerGains()
+	log.Printf("\tGetTunerGains %s\n", rtl.Status[status])
+	if status == rtl.Success {
 		for i, j := range g {
-			log.Printf("Gain %d: %d\n", i, j)
+			log.Printf("\t\tGain %d: %d\n", i, j)
 		}
 	}
 
-	if rate, ok := dev.GetSampleRate(); ok == rtl.Error {
-		// rtl-sdr lib needs fixing/
-		log.Printf("GetSampleRate: %d\n", rate)
-		// log.Fatal("GetCenterFreq failed, exiting\n")
-	} else {
-		log.Printf("GetSampleRate: %d\n", rate)
-	}
+	rate, status := dev.GetSampleRate()
+	log.Printf("\tGetSampleRate %s - rate: %d\n", rtl.Status[status], rate)
 
-	log.Printf("Setting sample rate to %d\n", rtl.DefaultSampleRate)
-	if ok = dev.SetSampleRate(rtl.DefaultSampleRate); ok != rtl.Success {
-		log.Println("SetSampleRate failed, exiting\n")
-	}
+	status = dev.SetSampleRate(rtl.DefaultSampleRate)
+	log.Printf("\tSetSampleRate %s - rate: %d\n", rtl.Status[status], rtl.DefaultSampleRate)
 
-	var rtl_freq, tuner_freq int
-	if rtl_freq, tuner_freq, ok = dev.GetXtalFreq(); ok != rtl.Success {
-		log.Println("GetXtalFreq failed, exiting\n")
-	} else {
-		log.Printf("GetXtalFreq - Center freq: %d, Tuner freq: %d\n", rtl_freq, tuner_freq)
-	}
+	rtl_freq, tuner_freq, status := dev.GetXtalFreq()
+	log.Printf("\tGetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
+		rtl.Status[status], rtl_freq, tuner_freq)
 
-	if ok = dev.SetXtalFreq(rtl_freq, tuner_freq); ok != rtl.Success {
-		log.Println("SetXtalFreq failed, exiting\n")
-	}
+	status = dev.SetXtalFreq(rtl_freq, tuner_freq)
+	log.Printf("\tSetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
+		rtl.Status[status], rtl_freq, tuner_freq)
 
-	if freq, ok := dev.GetCenterFreq(); ok == rtl.Error {
-		// rtl-sdr lib needs fixing/
-		log.Printf("Center freq: %d\n", freq)
-		// log.Fatal("GetCenterFreq failed, exiting\n")
-	} else {
-		log.Printf("Center freq: %d\n", freq)
-	}
+	freq, status := dev.GetCenterFreq()
+	log.Printf("\tGetCenterFreq %s - freq: %d\n", rtl.Status[status], freq)
 
-	// ok = dev.SetCenterFreq(freq)
-	// if ok < 0 {
-	// 	log.Printf("Error code: %d\n", ok)
-	// 	log.Println("SetCenterFreq failed, exiting\n")
+	// status = dev.SetCenterFreq(freq)
+	// if status < 0 {
+	// 	log.Printf("Error code: %d\n", status)
+	// 	log.Println("SetCenterFreq failed\n")
 	// } else {
 	// 	log.Printf("Center freq set: %d\n", freq)
 	// }
 
-	if freq, ok := dev.GetFreqCorrection(); ok != rtl.Success {
-		// rtl-sdr lib needs fixing/
-		log.Printf("GetFreqCorrection: %d\n", freq)
-		// log.Fatal("GetCenterFreq failed, exiting\n")
-	} else {
-		log.Printf("GetFreqCorrection: %d\n", freq)
-	}
+	freq, status = dev.GetFreqCorrection()
+	log.Printf("\tGetFreqCorrection %s - freq: %d\n", rtl.Status[status], freq)
 
 	rtlsdr_tuner := dev.GetTunerType()
-	log.Printf("GetTunerType: %s\n", rtl.TypeMap[rtlsdr_tuner])
+	log.Printf("\tGetTunerType %s - tuner type: %d\n", rtl.Status[status], rtl.TunerType[rtlsdr_tuner])
 
 	/*
 
@@ -123,43 +103,42 @@ func main() {
 		func (c *Context) SetDirectSampling(on int) (err int)
 	*/
 
-	if ok = dev.SetTestMode(1); ok < 1 {
-		log.Printf("SetTestMode to on failed with error code: %d\n", ok)
+	if status = dev.SetTestMode(1); status < 1 {
+		log.Printf("\tSetTestMode '1' Fail - error code: %d\n", status)
+	} else {
+		log.Printf("\tSetTestMode Success\n")
 	}
 
-	if ok = dev.ResetBuffer(); ok != rtl.Success {
-		log.Println("Buffer reset failed, exiting\n")
-	}
+	status = dev.ResetBuffer()
+	log.Printf("\tResetBuffer %s\n", rtl.Status[status])
 
 	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
-	if n_read, ok := dev.ReadSync(buffer, rtl.DefaultBufLength); ok != rtl.Success {
-		log.Println("ReadSync failed, exiting\n")
-	} else {
-		log.Println("ReadSync successful")
-		// log.Println(buffer)
+	n_read, status := dev.ReadSync(buffer, rtl.DefaultBufLength)
+	log.Printf("\tReadSync %s\n", rtl.Status[status])
+	if status == rtl.Success {
 		if n_read < rtl.DefaultBufLength {
-			log.Println("ReadSync short read, samples lost, exiting\n")
+			log.Println("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
 		}
 	}
 
-	if ok = dev.SetTestMode(0); ok < 1 {
-		log.Printf("SetTestMode to off failed with error code: %d\n", ok)
+	if status = dev.SetTestMode(1); status < 1 {
+		log.Printf("\tSetTestMode '0' Fail - error code: %d\n", status)
+	} else {
+		log.Printf("\tSetTestMode '0' Success\n")
 	}
-	/* 	Unusable on my systems (OSX 10.7.5 and Xubuntu 64-bit) due to a segfault caused by
-		a call to libusb_handle_events_timeout in the libusb library
-		from librtlsdr - it's a known issue.
 
-	// ReadAsync blocks until CancelAsync is called, so spawn
-	// a goroutine, running in a system thread, that waits
-	// for a signal from the callback function that it's
-	// done.
-	log.Println("Calling ReadAsync")
+	/*
+		Calling ReadAsync on my systems, OSX 10.7.5 and 64-bit Xubuntu, fails due
+		to a segfault that seems to manifest in libusb's libusb_handle_events_timeout
+		function, which is a known issue.
+	*/
+	// Note, ReadAsync blocks until CancelAsync is called, so spawn
+	// a goroutine running in its own system thread that'll wait
+	// for the async-read callback to signal when it's done.
 	go async_stop(dev)
 	var userctx rtl.UserCtx
-	ok = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-	if ok != rtl.Success {
-		log.Println("ReadAsync failed, exiting\n")
-	}
-	*/
-	log.Printf("Closing...\n")
+	status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	log.Printf("\tReadAsync %s\n", rtl.Status[status])
+
+	log.Printf("Exiting...\n")
 }

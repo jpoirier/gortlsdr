@@ -54,7 +54,7 @@ const (
 	MinimalBufLength      = 512
 	MaximalBufLength      = (256 * 16384)
 	Success               = 0
-	Error                 = -1
+	Fail                  = -1
 
 	LibusbSuccess           = 0
 	LibusbErrorIo           = -1
@@ -71,6 +71,11 @@ const (
 	LibusbErrorNotSupported = -12
 	LibusbErrorOther        = -99
 )
+
+var Status = map[int]string{
+	Success: "Successful",
+	Fail:    "Failed",
+}
 
 var TypeMap = map[int]string{
 	TunerUnknown: "RTLSDR_TUNER_UNKNOWN",
@@ -215,7 +220,7 @@ func (c *Context) SetCenterFreq(freq int) (err int) {
 func (c *Context) GetCenterFreq() (freq, err int) {
 	freq = int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
 	if freq == 0 {
-		err = -1
+		err = Fail
 	}
 	return
 }
@@ -240,7 +245,7 @@ func (c *Context) SetFreqCorrection(ppm int) (err int) {
 func (c *Context) GetFreqCorrection() (freq, err int) {
 	freq = int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
 	if freq == 0 {
-		err = -1
+		err = Fail
 	}
 	return
 }
@@ -300,7 +305,7 @@ func (c *Context) SetTunerGain(gain int) (err int) {
 func (c *Context) GetTunerGain() (gain, err int) {
 	gain = int(C.rtlsdr_get_tuner_gain((*C.rtlsdr_dev_t)(c.dev)))
 	if gain == 0 {
-		err = -1
+		err = Fail
 	}
 	return
 }
@@ -347,7 +352,7 @@ func (c *Context) SetSampleRate(rate int) (err int) {
 func (c *Context) GetSampleRate() (rate, err int) {
 	rate = int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
 	if rate == 0 {
-		err = -1
+		err = Fail
 	}
 	return
 }
