@@ -81,7 +81,7 @@ var TypeMap = map[int]string{
 	TunerR820T:   "RTLSDR_TUNER_R820T",
 }
 
-type ReadAsyncCb_T func([]int8, UserCtx)
+type ReadAsyncCb_T func([]int8, *UserCtx)
 
 var clientCb ReadAsyncCb_T
 
