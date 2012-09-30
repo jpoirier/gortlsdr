@@ -77,7 +77,7 @@ var Status = map[int]string{
 	Fail:    "Failed",
 }
 
-var TypeMap = map[int]string{
+var TunerType = map[int]string{
 	TunerUnknown: "RTLSDR_TUNER_UNKNOWN",
 	TunerE4000:   "RTLSDR_TUNER_E4000",
 	TunerFC0012:  "RTLSDR_TUNER_FC0012",
