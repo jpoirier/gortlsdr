@@ -70,6 +70,9 @@ const (
 	LibusbErrorNoMem        = -11
 	LibusbErrorNotSupported = -12
 	LibusbErrorOther        = -99
+
+	GainAuto   = 0
+	GainManual = 1
 )
 
 var Status = map[int]string{

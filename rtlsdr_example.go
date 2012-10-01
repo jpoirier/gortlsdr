@@ -39,7 +39,7 @@ func main() {
 	} else {
 		for i := 0; i < c; i++ {
 			m, p, s, status := rtl.GetDeviceUsbStrings(i)
-			log.Printf("GetDeviceUsbStrings %s - m: %s, p: %s, s: %s\n",
+			log.Printf("GetDeviceUsbStrings %s - %s %s %s\n",
 				rtl.Status[status], m, p, s)
 		}
 	}
@@ -53,7 +53,7 @@ func main() {
 	defer dev.Close()
 
 	m, p, s, status := dev.GetUsbStrings()
-	log.Printf("\tGetUsbStrings %s - m: %s, p: %s, s: %s\n", rtl.Status[status], m, p, s)
+	log.Printf("\tGetUsbStrings %s - %s %s %s\n", rtl.Status[status], m, p, s)
 
 	g, status := dev.GetTunerGains()
 	log.Printf("\tGetTunerGains %s\n", rtl.Status[status])
@@ -74,26 +74,26 @@ func main() {
 	// 	rtl.Status[status], rtl_freq, tuner_freq)
 
 	rtl_freq, tuner_freq, status := dev.GetXtalFreq()
-	log.Printf("\tGetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
+	log.Printf("\tGetXtalFreq %s - Rtl: %d, Tuner: %d\n",
 		rtl.Status[status], rtl_freq, tuner_freq)
 
-	// status = dev.SetCenterFreq(freq)
-	// if status < 0 {
-	// 	log.Println("SetCenterFreq failed\n")
-	// 	log.Printf("Error code: %d\n", status)
-	// } else {
-	// 	log.Printf("Center freq set: %d\n", freq)
-	// }
+	status = dev.SetCenterFreq(850000000)
+	if status < 0 {
+		log.Println("\tSetCenterFreq 850MHz Failed, error code: %d\n", status)
+	} else {
+		log.Println("\tSetCenterFreq 850MHz Successful")
+	}
 
 	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
 	log.Printf("\tGetFreqCorrection: %d\n", dev.GetFreqCorrection())
 	log.Printf("\tGetTunerType: %s\n", rtl.TunerType[dev.GetTunerType()])
+	log.Printf("\tSetTunerGainMode: %s\n", rtl.TunerType[dev.SetTunerGainMode(rtl.GainAuto)])
+	log.Printf("\tGetTunerGain: %s\n", dev.GetTunerGain())
 
 	/*
 		func (c *Context) SetFreqCorrection(ppm int) (err int)
 		func (c *Context) SetTunerGain(gain int) (err int)
 		func (c *Context) SetTunerIfGain(stage, gain int) (err int)
-		func (c *Context) SetTunerGainMode(manual int)
 		func (c *Context) SetAgcMode(on int) (err int)
 		func (c *Context) SetDirectSampling(on int) (err int)
 	*/
@@ -109,10 +109,8 @@ func main() {
 	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
 	n_read, status := dev.ReadSync(buffer, rtl.DefaultBufLength)
 	log.Printf("\tReadSync %s\n", rtl.Status[status])
-	if status == rtl.Success {
-		if n_read < rtl.DefaultBufLength {
-			log.Println("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
-		}
+	if status == rtl.Success && n_read < rtl.DefaultBufLength {
+		log.Println("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
 	}
 
 	if status = dev.SetTestMode(1); status < 1 {
@@ -129,10 +127,10 @@ func main() {
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
 	// a goroutine running in its own system thread that'll wait
 	// for the async-read callback to signal when it's done.
-	go async_stop(dev)
-	var userctx rtl.UserCtx
-	status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-	log.Printf("\tReadAsync %s\n", rtl.Status[status])
+	// go async_stop(dev)
+	// var userctx rtl.UserCtx
+	// status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	// log.Printf("\tReadAsync %s\n", rtl.Status[status])
 
 	log.Printf("Exiting...\n")
 }
