@@ -127,10 +127,10 @@ func main() {
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
 	// a goroutine running in its own system thread that'll wait
 	// for the async-read callback to signal when it's done.
-	// go async_stop(dev)
-	// var userctx rtl.UserCtx
-	// status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-	// log.Printf("\tReadAsync %s\n", rtl.Status[status])
+	go async_stop(dev)
+	var userctx rtl.UserCtx
+	status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	log.Printf("\tReadAsync %s\n", rtl.Status[status])
 
 	log.Printf("Exiting...\n")
 }
