@@ -64,6 +64,11 @@ Building gortlsdr on Windows:
 * [osmoconSDR] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) for the rtl-sdr library.
 * [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing...!
 
+# Todo
+* create a plotting example using [plotinum](http://code.google.com/p/plotinum)
+* create a Go port of librtlsdr's rtl_fm.c
+* remove the rtl-sdr dependency using [gousb](http://github.com/kylelemons/gousb)
+
 -joe
 
 
