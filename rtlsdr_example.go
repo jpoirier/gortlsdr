@@ -88,7 +88,7 @@ func main() {
 	log.Printf("\tGetFreqCorrection: %d\n", dev.GetFreqCorrection())
 	log.Printf("\tGetTunerType: %s\n", rtl.TunerType[dev.GetTunerType()])
 	log.Printf("\tSetTunerGainMode: %s\n", rtl.TunerType[dev.SetTunerGainMode(rtl.GainAuto)])
-	log.Printf("\tGetTunerGain: %s\n", dev.GetTunerGain())
+	log.Printf("\tGetTunerGain: %d\n", dev.GetTunerGain())
 
 	/*
 		func (c *Context) SetFreqCorrection(ppm int) (err int)
