@@ -1,7 +1,7 @@
 # Description
 
 gortlsdr is a simple Go interface to devices supported by the RTL-SDR project, which turns certain USB DVB-T dongles
-employing the Realtek RTL2832U chipset into a low-cost, general purpose software-defined radio receivers. It wraps all
+employing the Realtek RTL2832U chipset into a low-cost, general purpose software-defined radio receiver. It wraps all
 the functions in the [librtlsdr library](http://sdr.osmocom.org/trac/wiki/rtl-sdr) (including asynchronous read support).
 
 Supported Platforms:
@@ -30,8 +30,8 @@ See the rtlsdr_eample.go file.
     go run rtlsdr_eample.go
 
 ## Windows
-If you don't want to build the rtl-sdr dependencies from source you can use the pre-built package, which includes libusb,
-but you're restricted to building a 32-bit gortlsdr library.
+If you don't want to build the librtlsdr and libusb dependencies from source you can use the pre-built package, which
+includes libusb, but you're restricted to building a 32-bit gortlsdr library.
 
 Building gortlsdr on Windows:
 * Download and install [git](http://git-scm.com).
