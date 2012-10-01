@@ -5,23 +5,22 @@ employing the Realtek RTL2832U chipset into a low-cost, general purpose software
 the functions in the [librtlsdr library](http://sdr.osmocom.org/trac/wiki/rtl-sdr) (including asynchronous read support).
 
 Supported Platforms:
-
-- Linux
-- OS X
-- Windows
+* Linux
+* OS X
+* Windows (with a little work)
 
 
 # Installation
 
 ## Dependencies
-- [Go tools](http://golang.org)
-- [librtlsdr] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) - builds dated after 5/5/12
-- [libusb] (http://www.libusb.org)
-- [git] (http://git-scm.com)
+* [Go tools](http://golang.org)
+* [librtlsdr] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) - builds dated after 5/5/12
+* [libusb] (http://www.libusb.org)
+* [git] (http://git-scm.com)
 
 
 ## Usage
-All functions in librtlsdr are accessible in the gortlsdr package.
+All functions in librtlsdr are accessible from the gortlsdr package.
 
     go get -u github.com/jpoirier/gortlsdr
 
@@ -31,8 +30,8 @@ See the rtlsdr_eample.go file.
     go run rtlsdr_eample.go
 
 ## Windows
-If you don't want to build the rtl-sdr dependency from source you can use the pre-built package, which includes libusb,
-but you restricted you building a 32-bit gortlsdr library.
+If you don't want to build the rtl-sdr dependencies from source you can use the pre-built package, which includes libusb,
+but you're restricted to building a 32-bit gortlsdr library.
 
 Building gortlsdr on Windows:
 * Download and install [git](http://git-scm.com).
@@ -55,9 +54,9 @@ Building gortlsdr on Windows:
 
 
 # Credit
-- [pyrtlsdr](https://github.com/roger-/pyrtlsdr/tree/master/rtlsdr) for the great read-me description, which I copied.
-- [osmoconSDR] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) for the rtl-sdr library.
-- [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing...!
+* [pyrtlsdr](https://github.com/roger-/pyrtlsdr/tree/master/rtlsdr) for the great read-me description, which I copied.
+* [osmoconSDR] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) for the rtl-sdr library.
+* [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing...!
 
 -joe
 
