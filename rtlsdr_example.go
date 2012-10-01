@@ -6,7 +6,10 @@ import (
 	"fmt"
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	// "unsafe"
 )
 
@@ -29,8 +32,17 @@ func async_stop(dev *rtl.Context) {
 	}
 }
 
+func sig_abort(dev *rtl.Context) {
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT)
+	<-ch
+	_ = dev.CancelAsync()
+	dev.Close()
+	os.Exit(0)
+}
+
 func main() {
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(3)
 	var status int
 	var dev *rtl.Context
 
@@ -51,6 +63,7 @@ func main() {
 		log.Fatal("\tOpen Failed, exiting\n")
 	}
 	defer dev.Close()
+	go sig_abort(dev)
 
 	m, p, s, status := dev.GetUsbStrings()
 	log.Printf("\tGetUsbStrings %s - %s %s %s\n", rtl.Status[status], m, p, s)

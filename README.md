@@ -48,8 +48,8 @@ Building gortlsdr on Windows:
   and set the following two windows specific flags shown below, but with the correct paths from your system. CFLAGS points to
   the header files and LDFLAGS to the *.dll files:
 
-          #cgo windows CFLAGS: -IC:/Users/jpoirier/rtlsdr
-          #cgo windows LDFLAGS: -lrtlsdr -LC:/Users/jpoirier/rtlsdr/x32
+          cgo windows CFLAGS: -IC:/Users/jpoirier/rtlsdr
+          cgo windows LDFLAGS: -lrtlsdr -LC:/Users/jpoirier/rtlsdr/x32
 
 * Build gortlsdr:
 
