@@ -42,7 +42,7 @@ Building gortlsdr on Windows:
   it, e.g. to your user folder. Note the path to the header files and the *.dll files in the x32 folder.
 * Download gortlsdr, but don't install the package:
 
-      go get -d github.com/jpoirier/gortlsdr
+          go get -d github.com/jpoirier/gortlsdr
 
 * Set CFLAGS and LDFLAGS in rtlsdr.go. Open the rtlsdr.go file in an editor, it'll be in go-pkgs\src\github.com\jpoirier\gortlsdr,
   and set the following two windows specific flags shown below, but with the correct paths from your system. CFLAGS points to
@@ -53,7 +53,7 @@ Building gortlsdr on Windows:
 
 * Build gortlsdr:
 
-      go install github.com/jpoirier/gortlsdr
+          go install github.com/jpoirier/gortlsdr
 
 * Insert the DVB-T/DAB/FM dongle into a USB port, open a shell window in go-pkgs\src\github.com\jpoirier\gortlsdr and run
   the example program: go run rtlsdr_example.go. Note, the pre-built rtl-sdr package contains several test executables as well.
