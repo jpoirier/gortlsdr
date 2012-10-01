@@ -30,15 +30,15 @@ See the rtlsdr_eample.go file.
     go run rtlsdr_eample.go
 
 ## Windows
-If you don't want to build the librtlsdr and libusb dependencies from source you can use the pre-built package, which
-includes libusb, but you're restricted to building a 32-bit gortlsdr library.
+If you don't want to build the librtlsdr and libusb dependencies from source you can use the librtlsdr pre-built package,
+which includes libusb, but you're restricted to building a 32-bit gortlsdr library.
 
 Building gortlsdr on Windows:
 * Download and install [git](http://git-scm.com).
 * Download and install the [Go tools](http://code.google.com/p/go/downloads/list?q=OpSys-Windows+Type%3DInstaller).
   Create a "go-pkgs" directory-your user folder is a good location-and add a GOPATH variable to your system environment, where
   GOPATH is set to the go-pkgs path, e.g. GOPATH=c:\users\jpoirier\go-pkgs.
-* Download the prebuilt [rtl-sdr library](http://sdr.osmocom.org/trac/attachment/wiki/rtl-sdr/RelWithDebInfo.zip) and unzip
+* Download the pre-built [rtl-sdr library](http://sdr.osmocom.org/trac/attachment/wiki/rtl-sdr/RelWithDebInfo.zip) and unzip
   it, e.g. to your user folder. Note the path to the header files and the *.dll files in the x32 folder.
 * Download gortlsdr but don't install the package by running the following command: go get -d github.com/jpoirier/gortlsdr
 * Set CFLAGS and LDFLAGS in rtlsdr.go. Open the rtlsdr.go file in an editor, it'll be in go-pkgs\src\github.com\jpoirier\gortlsdr,
