@@ -35,7 +35,7 @@ which includes libusb, but you're restricted to building a 32-bit gortlsdr libra
 
 Building gortlsdr on Windows:
 * Download and install [git](http://git-scm.com).
-* Download and install the [Go tools](http://code.google.com/p/go/downloads/list?q=OpSys-Windows+Type%3DInstaller).
+* Download and install the [Go tools](https://code.google.com/p/go/downloads/list?q=OpSys-Windows+Type%3DInstaller).
   Create a "go-pkgs" directory-your user folder is a good location-and add a GOPATH variable to your system environment, where
   GOPATH is set to the go-pkgs path, e.g. GOPATH=c:\users\jpoirier\go-pkgs.
 * Download the pre-built [rtl-sdr library](http://sdr.osmocom.org/trac/attachment/wiki/rtl-sdr/RelWithDebInfo.zip) and unzip
@@ -62,7 +62,7 @@ Building gortlsdr on Windows:
 # Credit
 * [pyrtlsdr](https://github.com/roger-/pyrtlsdr) for the great read-me description, which I copied.
 * [osmoconSDR] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) for the rtl-sdr library.
-* [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing...!
+* [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing!
 
 # Todo
 * create a plotting example using [plotinum](https://code.google.com/p/plotinum)
