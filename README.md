@@ -67,7 +67,7 @@ Building gortlsdr on Windows:
 # Todo
 * create a plotting example using [plotinum](https://code.google.com/p/plotinum)
 * create a Go port of librtlsdr's rtl_fm.c
-* remove the rtl-sdr dependency using [gousb](https://github.com/kylelemons/gousb)
+* remove the rtl-sdr dependency using [gousb](https://github.com/kylelemons/gousb) and [go-dsp](https://github.com/mjibson/go-dsp)
 
 -joe
 
