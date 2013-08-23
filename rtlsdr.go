@@ -26,14 +26,14 @@ import (
 #include <rtl-sdr.h>
 
 extern void go_callback(unsigned char *buf, uint32_t len, void *ctx);
-void cb_bridge(unsigned char *buf, uint32_t len, void *ctx) {
-	go_callback(buf, len, ctx);
+rtlsdr_read_async_cb_t get_go_cb() {
+	return (rtlsdr_read_async_cb_t)go_callback;
 }
 */
 import "C"
 
 
-var PackageVersion string = "v1.3"
+var PackageVersion string = "v1.4"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
@@ -408,7 +408,7 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, buf_num,
 	buf_len int) (err int) {
 	clientCb = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
-		(C.rtlsdr_read_async_cb_t)(C.cb_bridge),
+		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
 		unsafe.Pointer(userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))
