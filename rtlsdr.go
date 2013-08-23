@@ -18,7 +18,7 @@ import (
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
 
-#cgo linux LDFLAGS: -lrtlsdr -llibusb
+#cgo linux LDFLAGS: -lrtlsdr -lusb
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
@@ -33,7 +33,7 @@ void cb_bridge(unsigned char *buf, uint32_t len, void *ctx) {
 import "C"
 
 
-var PackageVersion string = "v1.0"
+var PackageVersion string = "v1.3"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
