@@ -7,22 +7,31 @@
 //
 package rtlsdr
 
+import (
+	"unsafe"
+	// "reflect"
+)
+
 /*
-#cgo linux LDFLAGS: -lrtlsdr
+// On linux, you may need to unload the kernel DVB driver via:
+//     $ sudo rmmod dvb_usb_rtl28xxu rtl2832
+// If building libusb from source, to regenerate the configure file use:
+//     $ autoreconf -fvi
+
+#cgo linux LDFLAGS: -lrtlsdr -llibusb
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
 
 #include <rtl-sdr.h>
 
-extern void go_callback(char* p1, uint32_t p2, void* p3);
+extern void go_callback(unsigned char *buf, uint32_t len, void *ctx);
+void cb_bridge(unsigned char *buf, uint32_t len, void *ctx) {
+	go_callback(buf, len, ctx);
+}
 */
 import "C"
 
-import (
-	"reflect"
-	"unsafe"
-)
 
 var PackageVersion string = "v1.0"
 
@@ -92,20 +101,6 @@ var TunerType = map[int]string{
 type ReadAsyncCb_T func([]int8, *UserCtx)
 
 var clientCb ReadAsyncCb_T
-
-//export go_callback
-func go_callback(p1 *C.char, p2 C.uint32_t, p3 unsafe.Pointer) {
-	// c buffer to go slice without copying
-	var buf []int8
-	length := int(p2)
-	b := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
-	b.Cap = length
-	b.Len = length
-	b.Data = uintptr(unsafe.Pointer((*int8)(p1)))
-	clientCb(buf, (*UserCtx)(p3))
-}
-
-var GoCallback = go_callback
 
 // GetDeviceCount gets the number of valid USB dongles detected.
 //
@@ -413,7 +408,7 @@ func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, buf_num,
 	buf_len int) (err int) {
 	clientCb = f
 	err = int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
-		(C.rtlsdr_read_async_cb_t)(*(*unsafe.Pointer)(unsafe.Pointer(&GoCallback))),
+		(C.rtlsdr_read_async_cb_t)(C.cb_bridge),
 		unsafe.Pointer(userctx),
 		C.uint32_t(buf_num),
 		C.uint32_t(buf_len)))

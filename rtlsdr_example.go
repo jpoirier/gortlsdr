@@ -30,6 +30,8 @@ func async_stop(dev *rtl.Context) {
 	} else {
 		log.Println("CancelAsync successful\n")
 	}
+
+	os.Exit(0)
 }
 
 func sig_abort(dev *rtl.Context) {
@@ -132,11 +134,6 @@ func main() {
 		log.Printf("\tSetTestMode 'Off' Success\n")
 	}
 
-	/*
-		Calling ReadAsync on my systems, OSX 10.7.5 and 64-bit Xubuntu, fails due
-		to a segfault that seems to manifest in libusb's libusb_handle_events_timeout
-		function, which is a known issue.
-	*/
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
 	// a goroutine running in its own system thread that'll wait
 	// for the async-read callback to signal when it's done.
