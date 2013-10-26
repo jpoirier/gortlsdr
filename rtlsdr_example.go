@@ -13,15 +13,16 @@ import (
 	// "unsafe"
 )
 
-// TODO: pass chan to the callback function as a *UserCtx
 var c1 = make(chan bool)
 
 func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
 	log.Printf("Length of async-read buffer: %d", len(buf))
-	c1 <- true // async-read done signal
+	if c, ok := (*userctx).(chan bool); ok {
+		c <- true // async-read done signal
+	}
 }
 
-func async_stop(dev *rtl.Context) {
+func async_stop(dev *rtl.Context, c chan bool) {
 	<-c1 // async-read done signal
 
 	log.Println("Received async-read done, calling CancelAsync\n")
@@ -137,8 +138,9 @@ func main() {
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
 	// a goroutine running in its own system thread that'll wait
 	// for the async-read callback to signal when it's done.
-	go async_stop(dev)
-	var userctx rtl.UserCtx
+	IQch := make(chan bool)
+	go async_stop(dev, IQch)
+	var userctx rtl.UserCtx = IQch
 	status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 	log.Printf("\tReadAsync %s\n", rtl.Status[status])
 
