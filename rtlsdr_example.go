@@ -13,8 +13,6 @@ import (
 	// "unsafe"
 )
 
-var c1 = make(chan bool)
-
 func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
 	log.Printf("Length of async-read buffer: %d", len(buf))
 	if c, ok := (*userctx).(chan bool); ok {
@@ -23,7 +21,7 @@ func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
 }
 
 func async_stop(dev *rtl.Context, c chan bool) {
-	<-c1 // async-read done signal
+	<-c // async-read done signal
 
 	log.Println("Received async-read done, calling CancelAsync\n")
 	if status := dev.CancelAsync(); status != rtl.Success {
