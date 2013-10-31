@@ -28,4 +28,3 @@ func go_callback(p1 *C.uchar, p2 C.uint32_t, p3 unsafe.Pointer) {
 	b.Data = uintptr(unsafe.Pointer(p1))
 	clientCb(buf, (*UserCtx)(p3))
 }
-

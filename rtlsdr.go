@@ -23,6 +23,7 @@ import (
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
 
+#include <stdlib.h>
 #include <rtl-sdr.h>
 
 extern void go_callback(unsigned char *buf, uint32_t len, void *ctx);
@@ -32,8 +33,7 @@ rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-
-var PackageVersion string = "v1.4"
+var PackageVersion string = "v1.6"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
@@ -133,6 +133,21 @@ func GetDeviceUsbStrings(index int) (manufact, product, serial string, err int) 
 	return string(m), string(p), string(s), err
 }
 
+// Get device index by USB serial string descriptor.
+//
+
+// returns device index of first device where the name matched
+// -1 if name is NULL
+// -2 if no devices were found at all
+// -3 if devices were found, but none with matching name
+//
+// int rtlsdr_get_index_by_serial(const char *serial);
+func GetIndexBySerial(serial string) (index int) {
+	cstring := C.CString(serial)
+	defer C.free(unsafe.Pointer(cstring))
+	return int(C.rtlsdr_get_index_by_serial(cstring))
+}
+
 // Open returns a valid device's context.
 //
 // int rtlsdr_open(rtlsdr_dev_t **dev, uint32_t index);
@@ -198,6 +213,36 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 		(*C.char)(unsafe.Pointer(&p[0])),
 		(*C.char)(unsafe.Pointer(&s[0]))))
 	return string(m), string(p), string(s), err
+}
+
+// Write the device EEPROM
+//
+// data buffer of data to be written
+// offset address where the data should be written
+// len length of the data
+//
+// int rtlsdr_write_eeprom(rtlsdr_dev_t *dev, uint8_t *data, uint8_t offset, uint16_t len);
+// rtlsdr_write_eeprom returns 0 on success, -1 if device handle is invalid,
+// -2 if EEPROM size is exceeded, -3 if no EEPROM was found
+func (c *Context) WriteEeprom(data []uint8, offset uint8, leng uint16) (err int) {
+	return int(C.rtlsdr_write_eeprom((*C.rtlsdr_dev_t)(c.dev),
+		(*C.uint8_t)(unsafe.Pointer(&buf[0])),
+		C.uint8_t(offset),
+		C.uint16_t(leng)))
+}
+
+// Read the device EEPROM
+//
+// data buffer where the data should be written
+// offset address where the data should be read from
+// len length of the data
+//
+// int rtlsdr_read_eeprom(rtlsdr_dev_t *dev, uint8_t *data, uint8_t offset, uint16_t len);
+// rtlsdr_read_eeprom returns 0 on success, -1 if device handle is invalid,
+// -2 if EEPROM size is exceeded, -3 if no EEPROM was found
+func (c *Context) ReadEeprom(data, offset uint8, len uint16) (err int) {
+	return int(C.rtlsdr_read_eeprom((*C.rtlsdr_dev_t)(c.dev),
+		C.uint32_t(freq)))
 }
 
 // Set the device center frequency.
@@ -312,9 +357,8 @@ func (c *Context) SetTunerIfGain(stage, gain int) (err int) {
 // Set the gain mode (automatic/manual) for the device.
 // Manual gain mode must be enabled for the gain setter function to work.
 //
-// \param dev the device handle given by rtlsdr_open()
-// \param manual gain mode, 1 means manual gain mode shall be enabled.
-// \return 0 on success
+// manual gain mode, 1 means manual gain mode shall be enabled.
+//
 // int rtlsdr_set_tuner_gain_mode(rtlsdr_dev_t *dev, int manual);
 // rtlsdr_set_tuner_gain_mode returns 0 on success
 func (c *Context) SetTunerGainMode(manual int) (err int) {
@@ -376,6 +420,34 @@ func (c *Context) SetDirectSampling(on int) (err int) {
 		C.int(on)))
 }
 
+// Get state of the direct sampling mode
+//
+// int rtlsdr_get_direct_sampling(rtlsdr_dev_t *dev);
+// rtlsdr_get_direct_sampling returns -1 on error, 0 means disabled,
+// 1 I-ADC input enabled, 2 Q-ADC input enabled
+func (c *Context) GetDirectSampling() (err int) {
+	return int(C.rtlsdr_get_direct_sampling((*C.rtlsdr_dev_t)(c.dev)))
+}
+
+// Enable or disable offset tuning for zero-IF tuners, which allows to avoid
+// problems caused by the DC offset of the ADCs and 1/f noise.
+//
+// 0 means disabled, 1 enabled
+//
+// int rtlsdr_set_offset_tuning(rtlsdr_dev_t *dev, int on);
+// return 0 on success
+func (c *Context) SetOffsetTuning(on int) (err int) {
+	return int(C.rtlsdr_set_offset_tuning((*C.rtlsdr_dev_t)(c.dev)), C.int(on))
+}
+
+// Get state of the offset tuning mode
+//
+// int rtlsdr_get_offset_tuning(rtlsdr_dev_t *dev);
+// rtlsdr_get_offset_tuning returns -1 on error, 0 means disabled, 1 enabled
+func (c *Context) GetOffsetTuning() (err int) {
+	return int(C.rtlsdr_get_offset_tuning((*C.rtlsdr_dev_t)(c.dev)))
+}
+
 // streaming functions
 
 // int rtlsdr_reset_buffer(rtlsdr_dev_t *dev);
@@ -388,7 +460,7 @@ func (c *Context) ResetBuffer() (err int) {
 // rtlsdr_read_sync returns 0 on success
 func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_sync((*C.rtlsdr_dev_t)(c.dev),
-		(unsafe.Pointer(&buf[0])),
+		(*C.uint32_t)(unsafe.Pointer(&buf[0])),
 		C.int(len),
 		(*C.int)(unsafe.Pointer(&n_read))))
 	return
