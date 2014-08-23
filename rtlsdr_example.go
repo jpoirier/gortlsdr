@@ -112,10 +112,10 @@ func main() {
 		func (c *Context) SetDirectSampling(on int) (err int)
 	*/
 
-	if status = dev.SetTestMode(1); status < 1 {
-		log.Printf("\tSetTestMode 'On' Failed - error code: %d\n", status)
-	} else {
+	if status = dev.SetTestMode(1); status == 0 {
 		log.Printf("\tSetTestMode 'On' Successful\n")
+	} else {
+		log.Printf("\tSetTestMode 'On' Failed - error code: %d\n", status)
 	}
 
 	log.Printf("\tResetBuffer %s\n", rtl.Status[dev.ResetBuffer()])
@@ -127,10 +127,10 @@ func main() {
 		log.Println("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
 	}
 
-	if status = dev.SetTestMode(1); status < 1 {
-		log.Printf("\tSetTestMode 'Off' Fail - error code: %d\n", status)
+	if status = dev.SetTestMode(1); status == 0 {
+		log.Printf("\tSetTestMode 'Off' Successful\n")
 	} else {
-		log.Printf("\tSetTestMode 'Off' Success\n")
+		log.Printf("\tSetTestMode 'Off' Fail - error code: %d\n", status)
 	}
 
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
