@@ -13,7 +13,7 @@ import (
 	// "unsafe"
 )
 
-func rtlsdr_cb(buf []int8, userctx *rtl.UserCtx) {
+func rtlsdr_cb(buf []byte, userctx *rtl.UserCtx) {
 	log.Printf("Length of async-read buffer: %d", len(buf))
 	if c, ok := (*userctx).(chan bool); ok {
 		c <- true // async-read done signal

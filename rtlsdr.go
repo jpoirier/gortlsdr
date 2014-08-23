@@ -226,7 +226,7 @@ func (c *Context) GetUsbStrings() (manufact, product, serial string, err int) {
 // -2 if EEPROM size is exceeded, -3 if no EEPROM was found
 func (c *Context) WriteEeprom(data []uint8, offset uint8, leng uint16) (err int) {
 	return int(C.rtlsdr_write_eeprom((*C.rtlsdr_dev_t)(c.dev),
-		(*C.uint8_t)(unsafe.Pointer(&buf[0])),
+		(*C.uint8_t)(unsafe.Pointer(&data[0])),
 		C.uint8_t(offset),
 		C.uint16_t(leng)))
 }
@@ -240,9 +240,11 @@ func (c *Context) WriteEeprom(data []uint8, offset uint8, leng uint16) (err int)
 // int rtlsdr_read_eeprom(rtlsdr_dev_t *dev, uint8_t *data, uint8_t offset, uint16_t len);
 // rtlsdr_read_eeprom returns 0 on success, -1 if device handle is invalid,
 // -2 if EEPROM size is exceeded, -3 if no EEPROM was found
-func (c *Context) ReadEeprom(data, offset uint8, len uint16) (err int) {
+func (c *Context) ReadEeprom(data []uint8, offset uint8, leng uint16) (err int) {
 	return int(C.rtlsdr_read_eeprom((*C.rtlsdr_dev_t)(c.dev),
-		C.uint32_t(freq)))
+		(*C.uint8_t)(unsafe.Pointer(&data[0])),
+		C.uint8_t(offset),
+		C.uint16_t(leng)))
 }
 
 // Set the device center frequency.
@@ -437,7 +439,7 @@ func (c *Context) GetDirectSampling() (err int) {
 // int rtlsdr_set_offset_tuning(rtlsdr_dev_t *dev, int on);
 // return 0 on success
 func (c *Context) SetOffsetTuning(on int) (err int) {
-	return int(C.rtlsdr_set_offset_tuning((*C.rtlsdr_dev_t)(c.dev)), C.int(on))
+	return int(C.rtlsdr_set_offset_tuning((*C.rtlsdr_dev_t)(c.dev), C.int(on)))
 }
 
 // Get state of the offset tuning mode
@@ -460,7 +462,7 @@ func (c *Context) ResetBuffer() (err int) {
 // rtlsdr_read_sync returns 0 on success
 func (c *Context) ReadSync(buf []uint8, len int) (n_read int, err int) {
 	err = int(C.rtlsdr_read_sync((*C.rtlsdr_dev_t)(c.dev),
-		(*C.uint32_t)(unsafe.Pointer(&buf[0])),
+		unsafe.Pointer(&buf[0]),
 		C.int(len),
 		(*C.int)(unsafe.Pointer(&n_read))))
 	return

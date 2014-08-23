@@ -27,7 +27,7 @@ All functions in librtlsdr are accessible from the gortlsdr package:
 ## Example
 See the rtlsdr_eample.go file:
 
-    go run rtlsdr_eample.go
+    go run rtlsdr_example.go
 
 ## Windows
 If you don't want to build the librtlsdr and libusb dependencies from source you can use the librtlsdr pre-built package,
