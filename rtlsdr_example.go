@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	rtl "github.com/jpoirier/gortlsdr"
 	"log"
 	"os"
@@ -72,11 +71,11 @@ func main() {
 	g, status := dev.GetTunerGains()
 	log.Printf("\tGetTunerGains %s\n", rtl.Status[status])
 	if status == rtl.Success {
-		fmt.Printf("\tGains: ")
+		log.Printf("\tGains: ")
 		for _, j := range g {
-			fmt.Printf("%d ", j)
+			log.Printf("%d ", j)
 		}
-		fmt.Printf("\n")
+		log.Printf("\n")
 	}
 
 	log.Printf("\tSetSampleRate %s - rate: %d\n",
