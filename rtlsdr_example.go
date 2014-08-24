@@ -23,11 +23,11 @@ func rtlsdr_cb(buf []byte, userctx *rtl.UserCtx) {
 func async_stop(dev *rtl.Context, c chan bool) {
 	<-c // async-read done signal
 
-	log.Println("Received async-read done, calling CancelAsync\n")
+	log.Println("Received async-read done, calling CancelAsync")
 	if status := dev.CancelAsync(); status != rtl.Success {
-		log.Println("CancelAsync failed\n")
+		log.Println("CancelAsync failed")
 	} else {
-		log.Println("CancelAsync successful\n")
+		log.Println("CancelAsync successful")
 	}
 
 	os.Exit(0)
@@ -93,9 +93,9 @@ func main() {
 
 	status = dev.SetCenterFreq(850000000)
 	if status < 0 {
-		log.Println("\tSetCenterFreq 850MHz Failed, error code: %d\n", status)
+		log.Printf("\tSetCenterFreq 850MHz Failed, error code: %d\n", status)
 	} else {
-		log.Println("\tSetCenterFreq 850MHz Successful")
+		log.Printf("\tSetCenterFreq 850MHz Successful\n")
 	}
 
 	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
@@ -124,7 +124,7 @@ func main() {
 	n_read, status := dev.ReadSync(buffer, rtl.DefaultBufLength)
 	log.Printf("\tReadSync %s\n", rtl.Status[status])
 	if status == rtl.Success && n_read < rtl.DefaultBufLength {
-		log.Println("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
+		log.Printf("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
 	}
 
 	if status = dev.SetTestMode(1); status == 0 {
