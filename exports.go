@@ -5,6 +5,7 @@
 // Package gortlsdr wraps librtlsdr, which turns your Realtek RTL2832 based
 // DVB dongle into a SDR receiver.
 //
+
 package rtlsdr
 
 import (

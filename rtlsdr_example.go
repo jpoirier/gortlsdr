@@ -3,12 +3,14 @@
 package main
 
 import (
-	rtl "github.com/jpoirier/gortlsdr"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
+
+	rtl "github.com/jpoirier/gortlsdr"
 	// "unsafe"
 )
 
@@ -23,7 +25,7 @@ func async_stop(dev *rtl.Context, c chan bool) {
 	<-c // async-read done signal
 
 	log.Println("Received async-read done, calling CancelAsync")
-	if status := dev.CancelAsync(); status != rtl.Success {
+	if err := dev.CancelAsync(); err != nil {
 		log.Println("CancelAsync failed")
 	} else {
 		log.Println("CancelAsync successful")
@@ -43,64 +45,81 @@ func sig_abort(dev *rtl.Context) {
 
 func main() {
 	runtime.GOMAXPROCS(3)
-	var status int
+	var err error
 	var dev *rtl.Context
 
 	if c := rtl.GetDeviceCount(); c == 0 {
 		log.Fatal("No devices found, exiting.\n")
 	} else {
 		for i := 0; i < c; i++ {
-			m, p, s, status := rtl.GetDeviceUsbStrings(i)
+			m, p, s, err := rtl.GetDeviceUsbStrings(i)
 			log.Printf("GetDeviceUsbStrings %s - %s %s %s\n",
-				rtl.Status[status], m, p, s)
+				err, m, p, s)
 		}
 	}
 
 	log.Printf("===== Device name: %s =====\n", rtl.GetDeviceName(0))
 	log.Printf("===== Running tests using device indx: %d =====\n", 0)
 
-	if dev, status = rtl.Open(0); status != rtl.Success {
+	if dev, err = rtl.Open(0); err != nil {
 		log.Fatal("\tOpen Failed, exiting\n")
 	}
 	defer dev.Close()
 	go sig_abort(dev)
 
-	m, p, s, status := dev.GetUsbStrings()
-	log.Printf("\tGetUsbStrings %s - %s %s %s\n", rtl.Status[status], m, p, s)
-
-	g, status := dev.GetTunerGains()
-	log.Printf("\tGetTunerGains %s\n", rtl.Status[status])
-	if status == rtl.Success {
-		log.Printf("\tGains: ")
-		for _, j := range g {
-			log.Printf("%d ", j)
-		}
-		log.Printf("\n")
+	m, p, s, err := dev.GetUsbStrings()
+	if err != nil {
+		log.Printf("\tGetUsbStrings Failed - error: %s\n", err)
+	} else {
+		log.Printf("\tGetUsbStrings - %s %s %s\n", m, p, s)
 	}
 
-	log.Printf("\tSetSampleRate %s - rate: %d\n",
-		rtl.Status[dev.SetSampleRate(rtl.DefaultSampleRate)], rtl.DefaultSampleRate)
+	g, err := dev.GetTunerGains()
+	if err != nil {
+		log.Printf("\tGetTunerGains Failed - error: %s\n", err)
+	} else {
+		gains := fmt.Sprintf("\tGains: ")
+		for _, j := range g {
+			gains += fmt.Sprintf("%d ", j)
+		}
+		log.Printf("%s\n", gains)
+	}
+
+	err = dev.SetSampleRate(rtl.DefaultSampleRate)
+	if err != nil {
+		log.Printf("\tSetSampleRate Failed - error: %s\n", err)
+	} else {
+		log.Printf("\tSetSampleRate - rate: %d\n", rtl.DefaultSampleRate)
+	}
 	log.Printf("\tGetSampleRate: %d\n", dev.GetSampleRate())
 
 	// status = dev.SetXtalFreq(rtl_freq, tuner_freq)
 	// log.Printf("\tSetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
 	// 	rtl.Status[status], rtl_freq, tuner_freq)
 
-	rtl_freq, tuner_freq, status := dev.GetXtalFreq()
-	log.Printf("\tGetXtalFreq %s - Rtl: %d, Tuner: %d\n",
-		rtl.Status[status], rtl_freq, tuner_freq)
+	rtl_freq, tuner_freq, err := dev.GetXtalFreq()
+	if err != nil {
+		log.Printf("\tGetXtalFreq Failed - error: %s\n", err)
+	} else {
+		log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtl_freq, tuner_freq)
+	}
 
-	status = dev.SetCenterFreq(850000000)
-	if status < 0 {
-		log.Printf("\tSetCenterFreq 850MHz Failed, error code: %d\n", status)
+	err = dev.SetCenterFreq(850000000)
+	if err != nil {
+		log.Printf("\tSetCenterFreq 850MHz Failed, error: %s\n", err)
 	} else {
 		log.Printf("\tSetCenterFreq 850MHz Successful\n")
 	}
 
 	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
 	log.Printf("\tGetFreqCorrection: %d\n", dev.GetFreqCorrection())
-	log.Printf("\tGetTunerType: %s\n", rtl.TunerType[dev.GetTunerType()])
-	log.Printf("\tSetTunerGainMode: %s\n", rtl.TunerType[dev.SetTunerGainMode(rtl.GainAuto)])
+	log.Printf("\tGetTunerType: %s\n", dev.GetTunerType())
+	err = dev.SetTunerGainMode(false)
+	if err != nil {
+		log.Printf("\tSetTunerGainMode Failed - error: %s\n", err)
+	} else {
+		log.Printf("\tSetTunerGainMode Successful\n")
+	}
 	log.Printf("\tGetTunerGain: %d\n", dev.GetTunerGain())
 
 	/*
@@ -111,25 +130,33 @@ func main() {
 		func (c *Context) SetDirectSampling(on int) (err int)
 	*/
 
-	if status = dev.SetTestMode(1); status == 0 {
+	if err = dev.SetTestMode(true); err == nil {
 		log.Printf("\tSetTestMode 'On' Successful\n")
 	} else {
-		log.Printf("\tSetTestMode 'On' Failed - error code: %d\n", status)
+		log.Printf("\tSetTestMode 'On' Failed - error: %s\n", err)
 	}
 
-	log.Printf("\tResetBuffer %s\n", rtl.Status[dev.ResetBuffer()])
+	if err = dev.ResetBuffer(); err == nil {
+		log.Printf("\tResetBuffer Successful\n")
+	} else {
+		log.Printf("\tResetBuffer Failed - error: %s\n", err)
+	}
 
 	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
-	n_read, status := dev.ReadSync(buffer, rtl.DefaultBufLength)
-	log.Printf("\tReadSync %s\n", rtl.Status[status])
-	if status == rtl.Success && n_read < rtl.DefaultBufLength {
+	n_read, err := dev.ReadSync(buffer, rtl.DefaultBufLength)
+	if err != nil {
+		log.Printf("\tReadSync Failed - error: %s\n", err)
+	} else {
+		log.Printf("\tReadSync %d\n", n_read)
+	}
+	if err == nil && n_read < rtl.DefaultBufLength {
 		log.Printf("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
 	}
 
-	if status = dev.SetTestMode(1); status == 0 {
+	if err = dev.SetTestMode(false); err == nil {
 		log.Printf("\tSetTestMode 'Off' Successful\n")
 	} else {
-		log.Printf("\tSetTestMode 'Off' Fail - error code: %d\n", status)
+		log.Printf("\tSetTestMode 'Off' Fail - error: %s\n", err)
 	}
 
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
@@ -138,8 +165,12 @@ func main() {
 	IQch := make(chan bool)
 	go async_stop(dev, IQch)
 	var userctx rtl.UserCtx = IQch
-	status = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-	log.Printf("\tReadAsync %s\n", rtl.Status[status])
+	err = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	if err == nil {
+		log.Printf("\tReadAsync Successful\n")
+	} else {
+		log.Printf("\tReadAsync Fail - error: %s\n", err)
+	}
 
 	log.Printf("Exiting...\n")
 }
