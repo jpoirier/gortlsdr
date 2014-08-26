@@ -24,6 +24,8 @@ All functions in librtlsdr are accessible from the gortlsdr package:
 
     go get -u github.com/jpoirier/gortlsdr
 
+API documentation can be found here: https://godoc.org/github.com/jpoirier/gortlsdr
+
 ## Example
 See the rtlsdr_eample.go file:
 
@@ -70,6 +72,3 @@ Building gortlsdr on Windows:
 * remove the rtl-sdr dependency using [gousb](https://github.com/kylelemons/gousb) and [go-dsp](https://github.com/mjibson/go-dsp)
 
 -joe
-
-
-
