@@ -109,7 +109,6 @@ var clientCb ReadAsyncCb_T
 
 // given error int, return corresponding Go error
 func libusbError(errno int) error {
-
 	if err, ok := errMap[errno]; ok {
 		return err
 	} else {
@@ -457,7 +456,7 @@ func (c *Context) GetOffsetTuning() (enabled bool, err error) {
 		enabled = true
 		err = nil
 	default:
-		err = errors.New("unknown sampling mode state")
+		err = errors.New("unknown offset tuning mode state")
 	}
 	return
 }
