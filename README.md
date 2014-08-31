@@ -1,3 +1,5 @@
+![Godoc reference](https://godoc.org/github.com/jpoirier/gortlsdr?status.png)
+
 # Description
 
 gortlsdr is a simple Go interface to devices supported by the RTL-SDR project, which turns certain USB DVB-T dongles
@@ -23,8 +25,6 @@ Supported Platforms:
 All functions in librtlsdr are accessible from the gortlsdr package:
 
     go get -u github.com/jpoirier/gortlsdr
-
-API documentation can be found here: https://godoc.org/github.com/jpoirier/gortlsdr
 
 ## Example
 See the rtlsdr_eample.go file:
