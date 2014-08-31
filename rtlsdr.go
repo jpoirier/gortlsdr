@@ -56,21 +56,23 @@ const (
 	DefaultBufLength      = (16 * 16384)
 	MinimalBufLength      = 512
 	MaximalBufLength      = (256 * 16384)
+)
 
-	libusbSuccess           = 0
-	libusbErrorIo           = -1
-	libusbErrorInvalidParam = -2
-	libusbErrorAccess       = -3
-	libusbErrorNoDevice     = -4
-	libusbErrorNotFound     = -5
-	libusbErrorBusy         = -6
-	libusbErrorTimeout      = -7
-	libusbErrorOverflow     = -8
-	libusbErrorPipe         = -9
-	libusbErrorInterrupted  = -10
-	libusbErrorNoMem        = -11
-	libusbErrorNotSupported = -12
-	libusbErrorOther        = -99
+const (
+	libusbSuccess = iota * -1
+	libusbErrorIo
+	libusbErrorInvalidParam
+	libusbErrorAccess
+	libusbErrorNoDevice
+	libusbErrorNotFound
+	libusbErrorBusy
+	libusbErrorTimeout
+	libusbErrorOverflow
+	libusbErrorPipe
+	libusbErrorInterrupted
+	libusbErrorNoMem
+	libusbErrorNotSupported
+	libusbErrorOther = -99
 
 	SamplingNone SamplingMode = iota
 	SamplingIADC
@@ -79,18 +81,18 @@ const (
 
 var errMap = map[int]error{
 	libusbSuccess:           nil,
-	libusbErrorIo:           errors.New("IO error"),
+	libusbErrorIo:           errors.New("input/output error"),
 	libusbErrorInvalidParam: errors.New("invalid parameter(s)"),
-	libusbErrorAccess:       errors.New("device access error"),
-	libusbErrorNoDevice:     errors.New("no device"),
-	libusbErrorNotFound:     errors.New("not found"),
-	libusbErrorBusy:         errors.New("device busy"),
-	libusbErrorTimeout:      errors.New("timeout"),
+	libusbErrorAccess:       errors.New("access denied (insufficient permissions)"),
+	libusbErrorNoDevice:     errors.New("no such device (it may have been disconnected)"),
+	libusbErrorNotFound:     errors.New("entity not found"),
+	libusbErrorBusy:         errors.New("resource busy"),
+	libusbErrorTimeout:      errors.New("operation timed out"),
 	libusbErrorOverflow:     errors.New("overflow"),
-	libusbErrorPipe:         errors.New("pipe"),
-	libusbErrorInterrupted:  errors.New("interrupted"),
-	libusbErrorNoMem:        errors.New("out of memory"),
-	libusbErrorNotSupported: errors.New("not supported"),
+	libusbErrorPipe:         errors.New("pipe error"),
+	libusbErrorInterrupted:  errors.New("system call interrupted (perhaps due to signal)"),
+	libusbErrorNoMem:        errors.New("insufficient memory"),
+	libusbErrorNotSupported: errors.New("operation not supported or unimplemented on this platform"),
 	libusbErrorOther:        errors.New("unknown error"),
 }
 
@@ -264,6 +266,8 @@ func (c *Context) ReadEeprom(data []uint8, offset uint8, leng uint16) (err error
 }
 
 // Set the device center frequency.
+//
+// Frequency values are in Hz.
 func (c *Context) SetCenterFreq(freq int) (err error) {
 	i := int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(freq)))
@@ -366,6 +370,8 @@ func (c *Context) SetTunerGainMode(manualMode bool) (err error) {
 }
 
 // Selects the baseband filters according to the requested sample rate.
+//
+// Samplerate is in Hz.
 func (c *Context) SetSampleRate(rate int) (err error) {
 	i := int(C.rtlsdr_set_sample_rate((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(rate)))
@@ -374,6 +380,8 @@ func (c *Context) SetSampleRate(rate int) (err error) {
 }
 
 // Get actual sample rate the device is configured to.
+//
+// Samplerate is in Hz.
 func (c *Context) GetSampleRate() (rate int) {
 	return int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
 }
