@@ -1,4 +1,4 @@
-![Godoc reference](https://godoc.org/github.com/jpoirier/gortlsdr?status.png)
+[![Godoc reference](https://godoc.org/github.com/jpoirier/gortlsdr?status.svg)](https://godoc.org/github.com/jpoirier/gortlsdr)
 
 # Description
 
