@@ -18,7 +18,7 @@ import (
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
 
-#cgo linux LDFLAGS: -lrtlsdr -lusb
+#cgo linux LDFLAGS: -lrtlsdr
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
