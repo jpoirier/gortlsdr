@@ -361,7 +361,7 @@ func (c *Context) SetTunerIfGain(stage, gain int) (err error) {
 // Manual gain mode must be enabled for the gain setter function to work.
 func (c *Context) SetTunerGainMode(manualMode bool) (err error) {
 	mode := 0
-	if !manualMode {
+	if manualMode {
 		mode = 1
 	}
 	i := int(C.rtlsdr_set_tuner_gain_mode((*C.rtlsdr_dev_t)(c.dev),
