@@ -390,7 +390,7 @@ func (c *Context) GetSampleRate() (rate int) {
 // The counter is generated inside the RTL2832.
 func (c *Context) SetTestMode(testMode bool) (err error) {
 	mode := 0
-	if !testMode {
+	if testMode {
 		mode = 1
 	}
 	i := int(C.rtlsdr_set_testmode((*C.rtlsdr_dev_t)(c.dev),
@@ -401,7 +401,7 @@ func (c *Context) SetTestMode(testMode bool) (err error) {
 // Enable or disable the internal digital AGC of the RTL2832.
 func (c *Context) SetAgcMode(AGCMode bool) (err error) {
 	mode := 0
-	if !AGCMode {
+	if AGCMode {
 		mode = 1
 	}
 	i := int(C.rtlsdr_set_agc_mode((*C.rtlsdr_dev_t)(c.dev),
