@@ -147,14 +147,14 @@ func GetIndexBySerial(serial string) (index int, err error) {
 	cstring := C.CString(serial)
 	defer C.free(unsafe.Pointer(cstring))
 	index = int(C.rtlsdr_get_index_by_serial(cstring))
-	switch index {
-	case 0:
+	switch {
+	case index >= 0:
 		err = nil
-	case -1:
+	case index == -1:
 		err = errors.New("serial blank")
-	case -2:
+	case index == -2:
 		err = errors.New("no devices were found")
-	case -3:
+	case index == -3:
 		err = errors.New("no device found matching name")
 	default:
 		err = errors.New("unknown error")
@@ -225,7 +225,6 @@ func (c *Context) WriteEeprom(data []uint8, offset uint8, leng uint16) (err erro
 		(*C.uint8_t)(unsafe.Pointer(&data[0])),
 		C.uint8_t(offset),
 		C.uint16_t(leng)))
-
 	switch i {
 	case 0:
 		err = nil
