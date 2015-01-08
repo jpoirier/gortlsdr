@@ -283,16 +283,16 @@ func (c *Context) GetCenterFreq() (freq int) {
 // Set the frequency correction value for the device.
 //
 // Frequency values are in Hz.
-func (c *Context) SetFreqCorrection(ppm int) (err error) {
+func (c *Context) SetFreqCorrection(freq int) (err error) {
 	i := int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(c.dev),
-		C.int(ppm)))
+		C.int(freq)))
 	return libusbError(i)
 }
 
 // Get actual frequency correction value of the device.
 //
 // Correction value in ppm (parts per million).
-func (c *Context) GetFreqCorrection() (freq int) {
+func (c *Context) GetFreqCorrection() (ppm int) {
 	return int(C.rtlsdr_get_freq_correction((*C.rtlsdr_dev_t)(c.dev)))
 }
 
