@@ -29,9 +29,9 @@ func rtlsdr_cb(buf []byte, userctx *rtl.UserCtx) {
 	log.Printf("Length of async-read buffer: %d\n", len(buf))
 }
 
+// async_stop pends for a ping from the rtlsdrCb function
+// callback, and when received cancel the async callback.
 func async_stop(dev *rtl.Context, c chan bool) {
-	// Pends for a ping from the rtlsdrCb function callback,
-	// and when received cancel the async callback.
 	log.Println("async_stop running...")
 	<-c
 	log.Println("Received ping from rtlsdr_cb, calling CancelAsync")
