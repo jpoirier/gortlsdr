@@ -33,7 +33,7 @@ rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-var PackageVersion string = "v2.0"
+var PackageVersion string = "v2.1"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
@@ -77,6 +77,7 @@ const (
 	SamplingNone SamplingMode = iota
 	SamplingIADC
 	SamplingQADC
+	SamplingUnknown
 )
 
 var errMap = map[int]error{
@@ -94,6 +95,13 @@ var errMap = map[int]error{
 	libusbErrorNoMem:        errors.New("insufficient memory"),
 	libusbErrorNotSupported: errors.New("operation not supported or unimplemented on this platform"),
 	libusbErrorOther:        errors.New("unknown error"),
+}
+
+var samplingModes = map[SamplingMode]string{
+	SamplingNone:    "Disabled",
+	SamplingIADC:    "I-ADC Enabled",
+	SamplingQADC:    "Q-ADC Enabled",
+	SamplingUnknown: "Unknown",
 }
 
 var tunerTypes = map[uint32]string{
@@ -434,6 +442,7 @@ func (c *Context) GetDirectSampling() (mode SamplingMode, err error) {
 		mode = SamplingQADC
 		err = nil
 	default:
+		mode = SamplingUnknown
 		err = errors.New("unknown sampling mode state")
 	}
 	return
