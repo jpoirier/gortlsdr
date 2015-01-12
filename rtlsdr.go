@@ -97,7 +97,7 @@ var errMap = map[int]error{
 	libusbErrorOther:        errors.New("unknown error"),
 }
 
-var samplingModes = map[SamplingMode]string{
+var SamplingModes = map[SamplingMode]string{
 	SamplingNone:    "Disabled",
 	SamplingIADC:    "I-ADC Enabled",
 	SamplingQADC:    "Q-ADC Enabled",

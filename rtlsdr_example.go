@@ -14,24 +14,25 @@ import (
 	// "unsafe"
 )
 
-var init bool
+var send_ping bool = true
 
 // rtlsdr_cb is used for asynchronous streaming. It's the
 // user callback function passed to librtlsdr.
 func rtlsdr_cb(buf []byte, userctx *rtl.UserCtx) {
-	if !init:
-		init = true
+	if send_ping {
+		send_ping = false
 		// send a ping to async_stop
 		if c, ok := (*userctx).(chan bool); ok {
 			c <- true // async-read done signal
 		}
+	}
 	log.Printf("Length of async-read buffer: %d\n", len(buf))
 }
 
 func async_stop(dev *rtl.Context, c chan bool) {
 	// Pends for a ping from the rtlsdrCb function callback,
 	// and when received cancel the async callback.
-	log.Println("async_stop running...c")
+	log.Println("async_stop running...")
 	<-c
 	log.Println("Received ping from rtlsdr_cb, calling CancelAsync")
 	if err := dev.CancelAsync(); err != nil {
@@ -138,8 +139,8 @@ func main() {
 	if err != nil {
 		log.Printf("\tSetXtalFreq Failed - error: %s\n", err)
 	} else {
-		log.Printf("\tSetXtalFreq %s - Center freq: %d, Tuner freq: %d\n",
-			rtl.Status[err], rtl_freq, tuner_freq)
+		log.Printf("\tSetXtalFreq - Center freq: %d, Tuner freq: %d\n",
+			rtl_freq, tuner_freq)
 	}
 
 	//---------- Get/Set Center Freq ----------
@@ -170,26 +171,21 @@ func main() {
 	}
 
 	//---------- Get/Set Direct Sampling ----------
-	if mode, err = dev.GetDirectSampling(); err == nil {
-		log.Printf("\tGetDirectSampling Successful, mode: %s\n", samplingModes[mode])
+	if mode, err := dev.GetDirectSampling(); err == nil {
+		log.Printf("\tGetDirectSampling Successful, mode: %s\n",
+			rtl.SamplingModes[mode])
 	} else {
 		log.Printf("\tSetTestMode 'On' Failed - error: %s\n", err)
 	}
 
-	if err = dev.SetDirectSampling(true); err == nil {
-		log.Printf("\SetDirectSampling 'On' Successful\n")
+	if err = dev.SetDirectSampling(rtl.SamplingNone); err == nil {
+		log.Printf("\tSetDirectSampling 'On' Successful\n")
 	} else {
 		log.Printf("\tSetDirectSampling 'On' Failed - error: %s\n", err)
 	}
 
-	if err = dev.SetDirectSampling(false); err == nil {
-		log.Printf("\SetDirectSampling 'Off' Successful\n")
-	} else {
-		log.Printf("\tSetDirectSampling 'Off' Failed - error: %s\n", err)
-	}
-
 	//---------- Get/Set Tuner IF Gain ----------
-    	// if err = SetTunerIfGain(stage, gain: int); err == nil {
+	// if err = SetTunerIfGain(stage, gain: int); err == nil {
 	// 	log.Printf("\SetTunerIfGain Successful\n")
 	// } else {
 	// 	log.Printf("\tSetTunerIfGain Failed - error: %s\n", err)
