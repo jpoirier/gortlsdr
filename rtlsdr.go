@@ -33,7 +33,7 @@ rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-var PackageVersion string = "v2.1"
+var PackageVersion string = "v2.2"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
