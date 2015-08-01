@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 
 	rtl "github.com/jpoirier/gortlsdr"
@@ -54,7 +53,6 @@ func sig_abort(dev *rtl.Context) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(3)
 	var err error
 	var dev *rtl.Context
 
