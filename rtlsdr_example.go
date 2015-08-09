@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -62,6 +63,9 @@ func main() {
 	} else {
 		for i := 0; i < c; i++ {
 			m, p, s, err := rtl.GetDeviceUsbStrings(i)
+			if err == nil {
+				err = errors.New("")
+			}
 			log.Printf("GetDeviceUsbStrings %s - %s %s %s\n",
 				err, m, p, s)
 		}
