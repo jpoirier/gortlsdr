@@ -154,11 +154,11 @@ func main() {
 	//---------- Get/Set Freq Correction ----------
 	freq_corr := dev.GetFreqCorrection()
 	log.Printf("\tGetFreqCorrection: %d\n", freq_corr)
-	err = dev.SetFreqCorrection(freq_corr)
+	err = dev.SetFreqCorrection(10) // 10ppm
 	if err != nil {
-		log.Printf("\tGetFreqCorrection Failed, error: %s\n", err)
+		log.Printf("\tSetFreqCorrection Failed, error: %s\n", err)
 	} else {
-		log.Printf("\tGetFreqCorrection Successful\n")
+		log.Printf("\tSetFreqCorrection Successful\n")
 	}
 
 	//---------- Get/Set AGC Mode ----------
