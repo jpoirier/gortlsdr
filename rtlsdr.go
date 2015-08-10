@@ -2,9 +2,9 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-// Package gortlsdr wraps librtlsdr, which turns your Realtek RTL2832 based
-// DVB dongle into a SDR receiver.
+// rtlsdr wraps librtlsdr, which turns your DVB dongle into a SDR receiver.
 //
+
 package rtlsdr
 
 import (
@@ -33,7 +33,8 @@ rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-var PackageVersion string = "v2.4"
+// Current version.
+var PackageVersion = "v2.5"
 
 type Context struct {
 	dev *C.rtlsdr_dev_t
@@ -45,7 +46,7 @@ type SamplingMode int
 
 // These constants are used to set default parameter values.
 const (
-	Default_GAIN          = "auto"
+	DefaultGAIN           = "auto"
 	DefaultFc             = 80e6
 	DefaultRs             = 1.024e6
 	DefaultReadSize       = 1024
@@ -74,6 +75,7 @@ const (
 	libusbErrorOther = -99
 )
 
+// Sampling modes.
 const (
 	SamplingNone SamplingMode = iota
 	SamplingIADC
@@ -98,6 +100,7 @@ var errMap = map[int]error{
 	libusbErrorOther:        errors.New("unknown error"),
 }
 
+// Sampling modes map.
 var SamplingModes = map[SamplingMode]string{
 	SamplingNone:    "Disabled",
 	SamplingIADC:    "I-ADC Enabled",
@@ -123,9 +126,8 @@ var clientCb ReadAsyncCb_T
 func libusbError(errno int) error {
 	if err, ok := errMap[errno]; ok {
 		return err
-	} else {
-		return errors.New("unknown error")
 	}
+	return errors.New("unknown error")
 }
 
 // GetDeviceCount returns the number of devices detected.
@@ -138,7 +140,7 @@ func GetDeviceName(index int) (name string) {
 	return C.GoString(C.rtlsdr_get_device_name(C.uint32_t(index)))
 }
 
-// GetDeviceUsbStrings returns a devices information by index.
+// GetDeviceUsbStrings returns the information of a device by index.
 func GetDeviceUsbStrings(index int) (manufact, product, serial string, err error) {
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
@@ -193,20 +195,20 @@ func (c *Context) Close() (err error) {
 // frequency (and samplerate) error caused by the original (cheap) crystal.
 //
 // Note, call this function only if you fully understand the implications.
-func (c *Context) SetXtalFreq(rtl_freq_hz, tuner_freq_hz int) (err error) {
+func (c *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) (err error) {
 	i := int(C.rtlsdr_set_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
-		C.uint32_t(rtl_freq_hz),
-		C.uint32_t(tuner_freq_hz)))
+		C.uint32_t(rtlFreqHz),
+		C.uint32_t(tunerFreqHz)))
 	return libusbError(i)
 }
 
 // GetXtalFreq returns the crystal oscillator frequencies.
 // Typically both ICs use the same clock.
-func (c *Context) GetXtalFreq() (rtl_freq_hz, tuner_freq_hz int, err error) {
+func (c *Context) GetXtalFreq() (rtlFreqHz, tunerFreqHz int, err error) {
 	i := int(C.rtlsdr_get_xtal_freq((*C.rtlsdr_dev_t)(c.dev),
-		(*C.uint32_t)(unsafe.Pointer(&rtl_freq_hz)),
-		(*C.uint32_t)(unsafe.Pointer(&tuner_freq_hz))))
-	return rtl_freq_hz, tuner_freq_hz, libusbError(i)
+		(*C.uint32_t)(unsafe.Pointer(&rtlFreqHz)),
+		(*C.uint32_t)(unsafe.Pointer(&tunerFreqHz))))
+	return rtlFreqHz, tunerFreqHz, libusbError(i)
 }
 
 // GetUsbStrings returns the device information. Note, strings may be empty.
@@ -264,21 +266,21 @@ func (c *Context) ReadEeprom(data []uint8, offset uint8, leng uint16) (err error
 }
 
 // SetCenterFreq sets the center frequency.
-func (c *Context) SetCenterFreq(freq_hz int) (err error) {
+func (c *Context) SetCenterFreq(freqHz int) (err error) {
 	i := int(C.rtlsdr_set_center_freq((*C.rtlsdr_dev_t)(c.dev),
-		C.uint32_t(freq_hz)))
+		C.uint32_t(freqHz)))
 	return libusbError(i)
 }
 
 // GetCenterFreq returns the tuned frequency.
-func (c *Context) GetCenterFreq() (freq_hz int) {
+func (c *Context) GetCenterFreq() (freqHz int) {
 	return int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
 }
 
-// SetFreqCorrection sets the frequency correction value.
-func (c *Context) SetFreqCorrection(freq_hz int) (err error) {
+// SetFreqCorrection sets the frequency correction.
+func (c *Context) SetFreqCorrection(freqHz int) (err error) {
 	i := int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(c.dev),
-		C.int(freq_hz)))
+		C.int(freqHz)))
 	return libusbError(i)
 }
 
@@ -300,19 +302,19 @@ func (c *Context) GetTunerType() (tunerType string) {
 
 // GetTunerGains returns a list of supported tuner gains.
 // Values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (c *Context) GetTunerGains() (gains_tenths_dB []int, err error) {
+func (c *Context) GetTunerGains() (gainsTenthsDb []int, err error) {
 	//	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
 	i := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
 		(*C.int)(unsafe.Pointer(uintptr(0)))))
 	if i < 0 {
-		return gains_tenths_dB, libusbError(i)
+		return gainsTenthsDb, libusbError(i)
 	} else if i == 0 {
-		return gains_tenths_dB, nil
+		return gainsTenthsDb, nil
 	}
-	gains_tenths_dB = make([]int, i)
+	gainsTenthsDb = make([]int, i)
 	C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
-		(*C.int)(unsafe.Pointer(&gains_tenths_dB[0])))
-	return gains_tenths_dB, nil
+		(*C.int)(unsafe.Pointer(&gainsTenthsDb[0])))
+	return gainsTenthsDb, nil
 }
 
 // SetTunerGain sets the tuner gain. Note, manual gain mode
@@ -324,27 +326,27 @@ func (c *Context) GetTunerGains() (gains_tenths_dB []int, err error) {
 // 340, 420, 430, 450, 470, 490
 //
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (c *Context) SetTunerGain(gain_tenths_db int) (err error) {
+func (c *Context) SetTunerGain(gainsTenthsDb int) (err error) {
 	i := int(C.rtlsdr_set_tuner_gain((*C.rtlsdr_dev_t)(c.dev),
-		C.int(gain_tenths_db)))
+		C.int(gainsTenthsDb)))
 	return libusbError(i)
 }
 
 // GetTunerGain returns the tuner gain.
 //
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (c *Context) GetTunerGain() (gain_tenths_dB int) {
+func (c *Context) GetTunerGain() (gainsTenthsDb int) {
 	return int(C.rtlsdr_get_tuner_gain((*C.rtlsdr_dev_t)(c.dev)))
 }
 
 // SetTunerIfGain sets the intermediate frequency gain.
 //
-// Intermediate frequency gain stage number (1 to 6).
+// Intermediate frequency gain stage number 1 to 6.
 // Gain values are in tenths of dB, e.g. -30 means -3.0 dB.
-func (c *Context) SetTunerIfGain(stage, gain_tenths_dB int) (err error) {
+func (c *Context) SetTunerIfGain(stage, gainsTenthsDb int) (err error) {
 	i := int(C.rtlsdr_set_tuner_if_gain((*C.rtlsdr_dev_t)(c.dev),
 		C.int(stage),
-		C.int(gain_tenths_dB)))
+		C.int(gainsTenthsDb)))
 	return libusbError(i)
 }
 
@@ -364,15 +366,15 @@ func (c *Context) SetTunerGainMode(manualMode bool) (err error) {
 //
 // When applicable, the baseband filters are also selected based
 // on the requested sample rate.
-func (c *Context) SetSampleRate(rate_hz int) (err error) {
+func (c *Context) SetSampleRate(rateHz int) (err error) {
 	i := int(C.rtlsdr_set_sample_rate((*C.rtlsdr_dev_t)(c.dev),
-		C.uint32_t(rate_hz)))
+		C.uint32_t(rateHz)))
 	return libusbError(i)
 
 }
 
 // GetSampleRate returns the sample rate.
-func (c *Context) GetSampleRate() (rate_hz int) {
+func (c *Context) GetSampleRate() (rateHz int) {
 	return int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
 }
 
@@ -390,7 +392,7 @@ func (c *Context) SetTestMode(testMode bool) (err error) {
 	return libusbError(i)
 }
 
-// SetAgcMode sets the AGC (Automatic Gain Control mode.
+// SetAgcMode sets the AGC mode.
 func (c *Context) SetAgcMode(AGCMode bool) (err error) {
 	mode := 0
 	if AGCMode {
@@ -472,30 +474,30 @@ func (c *Context) ResetBuffer() (err error) {
 }
 
 // ReadSync performs a synchronous read of samples and returns
-// the number of bytes read.
-func (c *Context) ReadSync(buf []uint8, leng int) (n_read int, err error) {
+// the number of samples read.
+func (c *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 	i := int(C.rtlsdr_read_sync((*C.rtlsdr_dev_t)(c.dev),
 		unsafe.Pointer(&buf[0]),
 		C.int(leng),
-		(*C.int)(unsafe.Pointer(&n_read))))
-	return n_read, libusbError(i)
+		(*C.int)(unsafe.Pointer(&nRead))))
+	return nRead, libusbError(i)
 }
 
 // ReadAsync reads samples asynchronously. Note, this function
-// will block until it is being canceled using CancelAsync
+// will block until canceled using CancelAsync
 //
-// Optional buf_num buffer count, buf_num * buf_len = overall buffer size,
+// Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
 // set to 0 for default buffer count (32).
-// Optional buf_len buffer length, must be multiple of 512, set to 0 for
+// Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, buf_num,
-	buf_len int) (err error) {
+func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, bufNum,
+	bufLen int) (err error) {
 	clientCb = f
 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
 		unsafe.Pointer(userctx),
-		C.uint32_t(buf_num),
-		C.uint32_t(buf_len)))
+		C.uint32_t(bufNum),
+		C.uint32_t(bufLen)))
 	return libusbError(i)
 }
 
