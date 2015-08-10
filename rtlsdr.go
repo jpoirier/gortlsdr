@@ -26,9 +26,9 @@ import (
 #include <stdlib.h>
 #include <rtl-sdr.h>
 
-extern void go_callback(unsigned char *buf, uint32_t len, void *ctx);
+extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
 rtlsdr_read_async_cb_t get_go_cb() {
-	return (rtlsdr_read_async_cb_t)go_callback;
+	return (rtlsdr_read_async_cb_t)goCallback;
 }
 */
 import "C"
@@ -36,12 +36,15 @@ import "C"
 // Current version.
 var PackageVersion = "v2.5"
 
+// Device context.
 type Context struct {
 	dev *C.rtlsdr_dev_t
 }
 
+// Per user device context.
 type UserCtx interface{}
 
+// Sampling mode type.
 type SamplingMode int
 
 // These constants are used to set default parameter values.

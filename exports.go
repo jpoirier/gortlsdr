@@ -18,8 +18,8 @@ import (
 */
 import "C"
 
-//export go_callback
-func go_callback(p1 *C.uchar, p2 C.uint32_t, p3 unsafe.Pointer) {
+//export goCallback
+func goCallback(p1 *C.uchar, p2 C.uint32_t, p3 unsafe.Pointer) {
 	// c buffer to go slice without copying
 	var buf []byte
 	length := int(p2)
