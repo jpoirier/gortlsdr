@@ -14,7 +14,7 @@ import (
 	// "unsafe"
 )
 
-var sendPing bool = true
+var sendPing = true
 
 // rtlsdrCb is used for asynchronous streaming. It's the
 // user callback function passed to librtlsdr.

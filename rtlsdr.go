@@ -36,15 +36,15 @@ import "C"
 // Current version.
 var PackageVersion = "v2.5"
 
-// Device context.
+// Context is the opened device's context.
 type Context struct {
 	dev *C.rtlsdr_dev_t
 }
 
-// Per user device context.
+// UserCtx is a user defined parameter.
 type UserCtx interface{}
 
-// Sampling mode type.
+// SamplingMode is the sampling mode type.
 type SamplingMode int
 
 // These constants are used to set default parameter values.
