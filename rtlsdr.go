@@ -41,7 +41,14 @@ type Context struct {
 	dev *C.rtlsdr_dev_t
 }
 
-// UserCtx is a user defined parameter.
+// UserCtx defines the second parameter of the ReadAsync method
+// and is meant to be type asserted in the user's callback
+// function when used. It allows the user to pass in virtually
+// any object and is similar to C's void*.
+//
+// Examples would be a channel, a device context, a buffer, etc...
+// A channel type assertion:  c, ok := (*userctx).(chan bool)
+// A user context assertion:  device := (*userctx).(*rtl.Context)
 type UserCtx interface{}
 
 // SamplingMode is the sampling mode type.
