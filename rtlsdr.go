@@ -34,7 +34,7 @@ rtlsdr_read_async_cb_t get_go_cb() {
 import "C"
 
 // Current version.
-var PackageVersion = "v2.5"
+var PackageVersion = "v2.6"
 
 // Context is the opened device's context.
 type Context struct {
@@ -121,9 +121,10 @@ var tunerTypes = map[uint32]string{
 	C.RTLSDR_TUNER_R828D:   "RTLSDR_TUNER_R828D",
 }
 
-type ReadAsyncCb_T func([]byte, *UserCtx)
+// ReadAsyncCbT defines a user callback function type.
+type ReadAsyncCbT func([]byte, *UserCtx)
 
-var clientCb ReadAsyncCb_T
+var clientCb ReadAsyncCbT
 
 // libusbError returns a textual error desciption from errno.
 func libusbError(errno int) error {
@@ -493,7 +494,7 @@ func (c *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (c *Context) ReadAsync(f ReadAsyncCb_T, userctx *UserCtx, bufNum,
+func (c *Context) ReadAsync(f ReadAsyncCbT, userctx *UserCtx, bufNum,
 	bufLen int) (err error) {
 	clientCb = f
 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
