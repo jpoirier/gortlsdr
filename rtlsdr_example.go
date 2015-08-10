@@ -14,14 +14,14 @@ import (
 	// "unsafe"
 )
 
-var send_ping bool = true
+var sendPing bool = true
 
-// rtlsdr_cb is used for asynchronous streaming. It's the
+// rtlsdrCb is used for asynchronous streaming. It's the
 // user callback function passed to librtlsdr.
-func rtlsdr_cb(buf []byte, userctx *rtl.UserCtx) {
-	if send_ping {
-		send_ping = false
-		// send a ping to async_stop
+func rtlsdrCb(buf []byte, userctx *rtl.UserCtx) {
+	if sendPing {
+		sendPing = false
+		// send a ping to asyncStop
 		if c, ok := (*userctx).(chan bool); ok {
 			c <- true // async-read done signal
 		}
@@ -29,12 +29,12 @@ func rtlsdr_cb(buf []byte, userctx *rtl.UserCtx) {
 	log.Printf("Length of async-read buffer: %d\n", len(buf))
 }
 
-// async_stop pends for a ping from the rtlsdrCb function
+// asyncStop pends for a ping from the rtlsdrCb function
 // callback, and when received cancel the async callback.
-func async_stop(dev *rtl.Context, c chan bool) {
-	log.Println("async_stop running...")
+func asyncStop(dev *rtl.Context, c chan bool) {
+	log.Println("asyncStop running...")
 	<-c
-	log.Println("Received ping from rtlsdr_cb, calling CancelAsync")
+	log.Println("Received ping from rtlsdrCb, calling CancelAsync")
 	if err := dev.CancelAsync(); err != nil {
 		log.Printf("CancelAsync failed - %s\n", err)
 	} else {
@@ -44,7 +44,7 @@ func async_stop(dev *rtl.Context, c chan bool) {
 	os.Exit(0)
 }
 
-func sig_abort(dev *rtl.Context) {
+func sigAbort(dev *rtl.Context) {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT)
 	<-ch
@@ -79,7 +79,7 @@ func main() {
 		log.Fatal("\tOpen Failed, exiting\n")
 	}
 	defer dev.Close()
-	go sig_abort(dev)
+	go sigAbort(dev)
 
 	//---------- Device Strings ----------
 	m, p, s, err := dev.GetUsbStrings()
@@ -130,19 +130,19 @@ func main() {
 	log.Printf("\tGetSampleRate: %d\n", dev.GetSampleRate())
 
 	//---------- Get/Set Xtal Freq ----------
-	rtl_freq, tuner_freq, err := dev.GetXtalFreq()
+	rtlFreq, tunerFreq, err := dev.GetXtalFreq()
 	if err != nil {
 		log.Printf("\tGetXtalFreq Failed - error: %s\n", err)
 	} else {
-		log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtl_freq, tuner_freq)
+		log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtlFreq, tunerFreq)
 	}
 
-	err = dev.SetXtalFreq(rtl_freq, tuner_freq)
+	err = dev.SetXtalFreq(rtlFreq, tunerFreq)
 	if err != nil {
 		log.Printf("\tSetXtalFreq Failed - error: %s\n", err)
 	} else {
 		log.Printf("\tSetXtalFreq - Center freq: %d, Tuner freq: %d\n",
-			rtl_freq, tuner_freq)
+			rtlFreq, tunerFreq)
 	}
 
 	//---------- Get/Set Center Freq ----------
@@ -156,8 +156,8 @@ func main() {
 	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
 
 	//---------- Get/Set Freq Correction ----------
-	freq_corr := dev.GetFreqCorrection()
-	log.Printf("\tGetFreqCorrection: %d\n", freq_corr)
+	freqCorr := dev.GetFreqCorrection()
+	log.Printf("\tGetFreqCorrection: %d\n", freqCorr)
 	err = dev.SetFreqCorrection(10) // 10ppm
 	if err != nil {
 		log.Printf("\tSetFreqCorrection Failed, error: %s\n", err)
@@ -213,24 +213,24 @@ func main() {
 		log.Printf("\tResetBuffer Failed - error: %s\n", err)
 	}
 
-	var buffer []byte = make([]uint8, rtl.DefaultBufLength)
-	n_read, err := dev.ReadSync(buffer, rtl.DefaultBufLength)
+	var buffer = make([]uint8, rtl.DefaultBufLength)
+	nRead, err := dev.ReadSync(buffer, rtl.DefaultBufLength)
 	if err != nil {
 		log.Printf("\tReadSync Failed - error: %s\n", err)
 	} else {
-		log.Printf("\tReadSync %d\n", n_read)
+		log.Printf("\tReadSync %d\n", nRead)
 	}
-	if err == nil && n_read < rtl.DefaultBufLength {
-		log.Printf("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-n_read)
+	if err == nil && nRead < rtl.DefaultBufLength {
+		log.Printf("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-nRead)
 	}
 
 	// Note, ReadAsync blocks until CancelAsync is called, so spawn
 	// a goroutine running in its own system thread that'll wait
 	// for the async-read callback to signal when it's done.
 	IQch := make(chan bool)
-	go async_stop(dev, IQch)
+	go asyncStop(dev, IQch)
 	var userctx rtl.UserCtx = IQch
-	err = dev.ReadAsync(rtlsdr_cb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	err = dev.ReadAsync(rtlsdrCb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 	if err == nil {
 		log.Printf("\tReadAsync Successful\n")
 	} else {
