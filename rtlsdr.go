@@ -61,7 +61,8 @@ type Context struct {
 // A user context assertion:  device := (*userctx).(*rtl.Context)
 type UserCtx interface{}
 
-// A custom user type
+// CustUserCtx allows a user to specify a unique callback function
+// and context with each call to ReadAsync2.
 type CustUserCtx struct {
 	ClientCb ReadAsyncCbT
 	Userctx  *UserCtx
@@ -506,7 +507,8 @@ func (c *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 }
 
 // ReadAsync reads samples asynchronously. Note, this function
-// will block until canceled using CancelAsync
+// will block until canceled using CancelAsync. ReadAsyncCbT is
+// a package global variable.
 //
 // Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
 // set to 0 for default buffer count (32).
@@ -523,6 +525,15 @@ func (c *Context) ReadAsync(f ReadAsyncCbT, userctx *UserCtx, bufNum,
 	return libusbError(i)
 }
 
+// ReadAsync2 reads samples asynchronously. The CustUserCtx type allows
+// a user to specify a unique callback function and context with each
+// call to ReadAsync2.  Note, this function will block until canceled
+// using CancelAsync.
+//
+// Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
+// set to 0 for default buffer count (32).
+// Optional bufLen buffer length, must be multiple of 512, set to 0 for
+// default buffer length (16 * 32 * 512).
 func (c *Context) ReadAsync2(custctx *CustUserCtx, bufNum, bufLen int) (err error) {
 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb2()),

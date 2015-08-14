@@ -39,10 +39,6 @@ func goCallback2(p1 *C.uchar, p2 C.uint32_t, p3 unsafe.Pointer) {
 	b.Cap = length
 	b.Len = length
 	b.Data = uintptr(unsafe.Pointer(p1))
-
-	if c, ok := (*(*UserCtx)(p3)).(*CustUserCtx); ok {
-		c.ClientCb(buf, c.Userctx)
-	} else {
-		clientCb(buf, (*UserCtx)(p3))
-	}
+	c := (*CustUserCtx)(p3)
+	c.ClientCb(buf, c.Userctx)
 }
