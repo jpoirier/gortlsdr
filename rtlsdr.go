@@ -2,8 +2,8 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-// rtlsdr wraps librtlsdr, which turns your DVB dongle into a SDR receiver.
-//
+// Package gortlsdr wraps librtlsdr, which turns your Realtek RTL2832 based
+// DVB dongle into a SDR receiver.
 
 package rtlsdr
 
@@ -30,11 +30,21 @@ extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
 rtlsdr_read_async_cb_t get_go_cb() {
 	return (rtlsdr_read_async_cb_t)goCallback;
 }
+
+extern void goCallback2(unsigned char *buf, uint32_t len, void *ctx);
+rtlsdr_read_async_cb_t get_go_cb2() {
+	return (rtlsdr_read_async_cb_t)goCallback2;
+}
 */
 import "C"
 
 // Current version.
-var PackageVersion = "v2.6"
+var PackageVersion = "v2.7"
+
+// ReadAsyncCbT defines a user callback function type.
+type ReadAsyncCbT func([]byte, *UserCtx)
+
+var clientCb ReadAsyncCbT
 
 // Context is the opened device's context.
 type Context struct {
@@ -50,6 +60,12 @@ type Context struct {
 // A channel type assertion:  c, ok := (*userctx).(chan bool)
 // A user context assertion:  device := (*userctx).(*rtl.Context)
 type UserCtx interface{}
+
+// A custom user type
+type CustUserCtx struct {
+	ClientCb ReadAsyncCbT
+	Userctx  *UserCtx
+}
 
 // SamplingMode is the sampling mode type.
 type SamplingMode int
@@ -127,11 +143,6 @@ var tunerTypes = map[uint32]string{
 	C.RTLSDR_TUNER_R820T:   "RTLSDR_TUNER_R820T",
 	C.RTLSDR_TUNER_R828D:   "RTLSDR_TUNER_R828D",
 }
-
-// ReadAsyncCbT defines a user callback function type.
-type ReadAsyncCbT func([]byte, *UserCtx)
-
-var clientCb ReadAsyncCbT
 
 // libusbError returns a textual error desciption from errno.
 func libusbError(errno int) error {
@@ -507,6 +518,15 @@ func (c *Context) ReadAsync(f ReadAsyncCbT, userctx *UserCtx, bufNum,
 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
 		unsafe.Pointer(userctx),
+		C.uint32_t(bufNum),
+		C.uint32_t(bufLen)))
+	return libusbError(i)
+}
+
+func (c *Context) ReadAsync2(custctx *CustUserCtx, bufNum, bufLen int) (err error) {
+	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
+		(C.rtlsdr_read_async_cb_t)(C.get_go_cb2()),
+		unsafe.Pointer(custctx),
 		C.uint32_t(bufNum),
 		C.uint32_t(bufLen)))
 	return libusbError(i)

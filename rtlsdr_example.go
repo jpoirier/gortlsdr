@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	rtl "github.com/jpoirier/gortlsdr"
 	// "unsafe"
@@ -16,14 +17,17 @@ import (
 
 var sendPing = true
 
-// rtlsdrCb is used for asynchronous streaming. It's the
-// user callback function passed to librtlsdr.
+// rtlsdrCb is used for asynchronous streaming. It's our
+// callback function rtl-sdr callback function.
 func rtlsdrCb(buf []byte, userctx *rtl.UserCtx) {
 	if sendPing {
+		log.Println("sendPing = false")
 		sendPing = false
 		// send a ping to asyncStop
 		if c, ok := (*userctx).(chan bool); ok {
 			c <- true // async-read done signal
+		} else {
+			log.Println("fail...")
 		}
 	}
 	log.Printf("Length of async-read buffer: %d\n", len(buf))
@@ -40,8 +44,7 @@ func asyncStop(dev *rtl.Context, c chan bool) {
 	} else {
 		log.Printf("CancelAsync successful\n")
 	}
-
-	os.Exit(0)
+	//os.Exit(0)
 }
 
 func sigAbort(dev *rtl.Context) {
@@ -230,9 +233,27 @@ func main() {
 	IQch := make(chan bool)
 	go asyncStop(dev, IQch)
 	var userctx rtl.UserCtx = IQch
+
 	err = dev.ReadAsync(rtlsdrCb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 	if err == nil {
 		log.Printf("\tReadAsync Successful\n")
+	} else {
+		log.Printf("\tReadAsync Fail - error: %s\n", err)
+	}
+
+	// setup for the second async read session
+	go asyncStop(dev, IQch)
+	sendPing = true
+
+	log.Println("\nSleeping...\n")
+	time.Sleep(2 * time.Second)
+
+	// Use the new ReadAsync2 method which uses the new rtl.CustUserCtx
+	// type.
+	custctx := &rtl.CustUserCtx{ClientCb: rtlsdrCb, Userctx: &userctx}
+	err = dev.ReadAsync2(custctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	if err == nil {
+		log.Printf("\tSecond ReadAsync Successful\n")
 	} else {
 		log.Printf("\tReadAsync Fail - error: %s\n", err)
 	}
