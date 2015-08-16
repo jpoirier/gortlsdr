@@ -160,13 +160,13 @@ func main() {
 
 	//---------- Set Bandwidth ----------
 	bandwidths := []int{300000, 400000, 550000, 700000, 1000000, 1200000,
-		1300000, 1600000, 2200000, 3000000}
+		1300000, 1600000, 2200000, 3000000, 4000000, 5000000, 6000000, 7000000}
 	for _, bw := range bandwidths {
 		log.Printf("\tSetting Bandwidth: %d\n", bw)
 		if err = dev.SetTunerBw(bw); err != nil {
-			log.Printf("\tError SetTunerBw: %d\n", bw)
+			log.Printf("\tSetTunerBw %d Failed, error: %s\n", bw, err)
 		} else {
-			log.Printf("\tSuccess SetTunerBw: %d\n", bw)
+			log.Printf("\tSetTunerBw %d Successful\n", bw)
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -176,9 +176,9 @@ func main() {
 	log.Printf("\tGetFreqCorrection: %d\n", freqCorr)
 	err = dev.SetFreqCorrection(10) // 10ppm
 	if err != nil {
-		log.Printf("\tSetFreqCorrection Failed, error: %s\n", err)
+		log.Printf("\tSetFreqCorrection %d Failed, error: %s\n", 10, err)
 	} else {
-		log.Printf("\tSetFreqCorrection Successful\n")
+		log.Printf("\tSetFreqCorrection %d Successful\n", 10)
 	}
 
 	//---------- Get/Set AGC Mode ----------
