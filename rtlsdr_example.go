@@ -163,7 +163,7 @@ func main() {
 		1300000, 1600000, 2200000, 3000000}
 	for _, bw := range bandwidths {
 		log.Printf("\tSetting Bandwidth: %d\n", bw)
-		if r := dev.SetTunerBw(bw); r != 0 {
+		if err = dev.SetTunerBw(bw); err != nil {
 			log.Printf("\tError SetTunerBw: %d\n", bw)
 		} else {
 			log.Printf("\tSuccess SetTunerBw: %d\n", bw)
