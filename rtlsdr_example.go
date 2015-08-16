@@ -149,14 +149,27 @@ func main() {
 	}
 
 	//---------- Get/Set Center Freq ----------
-	err = dev.SetCenterFreq(850000000)
+	err = dev.SetCenterFreq(978000000)
 	if err != nil {
-		log.Printf("\tSetCenterFreq 850MHz Failed, error: %s\n", err)
+		log.Printf("\tSetCenterFreq 978MHz Failed, error: %s\n", err)
 	} else {
-		log.Printf("\tSetCenterFreq 850MHz Successful\n")
+		log.Printf("\tSetCenterFreq 978MHz Successful\n")
 	}
 
 	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
+
+	//---------- Set Bandwidth ----------
+	bandwidths := []int{300000, 400000, 550000, 700000, 1000000, 1200000,
+		1300000, 1600000, 2200000, 3000000}
+	for _, bw := range bandwidths {
+		log.Printf("\tSetting Bandwidth: %d\n", bw)
+		if r := dev.SetTunerBw(bw); r != 0 {
+			log.Printf("\tError SetTunerBw: %d\n", bw)
+		} else {
+			log.Printf("\tSuccess SetTunerBw: %d\n", bw)
+		}
+		time.Sleep(1 * time.Second)
+	}
 
 	//---------- Get/Set Freq Correction ----------
 	freqCorr := dev.GetFreqCorrection()

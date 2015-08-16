@@ -295,7 +295,7 @@ func (c *Context) SetCenterFreq(freqHz int) (err error) {
 	return libusbError(i)
 }
 
-// GetCenterFreq returns the tuned frequency.
+// GetCenterFreq returns the tuned frequency or zero on error.
 func (c *Context) GetCenterFreq() (freqHz int) {
 	return int(C.rtlsdr_get_center_freq((*C.rtlsdr_dev_t)(c.dev)))
 }
@@ -355,6 +355,20 @@ func (c *Context) SetTunerGain(gainsTenthsDb int) (err error) {
 	return libusbError(i)
 }
 
+// SetTunerBw sets the device bandwidth, returns zero
+// on success. bwHz = 0 means automatic bandwidth selection.
+func (c *Context) SetTunerBw(bwHz int) {
+	return int(C.rtlsdr_set_tuner_bandwidth((*C.rtlsdr_dev_t)(c.dev),
+		C.uint32_t(bwHz)))
+}
+
+// Not in the rtl-sdr library yet
+// GetTunerBw returns the device bandwidth setting,
+// zero means automatic bandwidth.
+// func (c *Context) GetTunerBw(bwHz int) {
+// 	return int(C.rtlsdr_set_tuner_bandwidth((*C.rtlsdr_dev_t)(c.dev)))
+// }
+
 // GetTunerGain returns the tuner gain.
 //
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
@@ -401,7 +415,7 @@ func (c *Context) GetSampleRate() (rateHz int) {
 	return int(C.rtlsdr_get_sample_rate((*C.rtlsdr_dev_t)(c.dev)))
 }
 
-// SetTestMode sets to test mode.
+// SetTestMode sets device to  test mode.
 //
 // Test mode returns 8 bit counters instead of samples. Note,
 // the counter is generated inside the device.
