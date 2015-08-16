@@ -355,11 +355,11 @@ func (c *Context) SetTunerGain(gainsTenthsDb int) (err error) {
 	return libusbError(i)
 }
 
-// SetTunerBw sets the device bandwidth, returns zero
-// on success. bwHz = 0 means automatic bandwidth selection.
-func (c *Context) SetTunerBw(bwHz int) {
-	return int(C.rtlsdr_set_tuner_bandwidth((*C.rtlsdr_dev_t)(c.dev),
+// SetTunerBw sets the device bandwidth.
+func (c *Context) SetTunerBw(bwHz int) (err error) {
+	i := int(C.rtlsdr_set_tuner_bandwidth((*C.rtlsdr_dev_t)(c.dev),
 		C.uint32_t(bwHz)))
+	return libusbError(i)
 }
 
 // Not in the rtl-sdr library yet
