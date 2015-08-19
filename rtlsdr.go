@@ -39,7 +39,7 @@ rtlsdr_read_async_cb_t get_go_cb2() {
 import "C"
 
 // Current version.
-var PackageVersion = "v2.8"
+var PackageVersion = "v2.9"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte, *UserCtx)
@@ -145,7 +145,7 @@ var tunerTypes = map[uint32]string{
 	C.RTLSDR_TUNER_R828D:   "RTLSDR_TUNER_R828D",
 }
 
-// libusbError returns a textual error desciption from errno.
+// libusbError returns a textual error description from errno.
 func libusbError(errno int) error {
 	if err, ok := errMap[errno]; ok {
 		return err
@@ -524,7 +524,7 @@ func (c *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 // will block until canceled using CancelAsync. ReadAsyncCbT is
 // a package global variable.
 //
-// Note, please use ReadAsync2 as this method will be depracated
+// Note, please use ReadAsync2 as this method will be deprecated
 // in the future
 //
 // Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
