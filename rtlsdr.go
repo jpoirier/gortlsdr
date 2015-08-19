@@ -27,12 +27,12 @@ import (
 #include <rtl-sdr.h>
 
 extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
-rtlsdr_read_async_cb_t get_go_cb() {
+static inline rtlsdr_read_async_cb_t get_go_cb() {
 	return (rtlsdr_read_async_cb_t)goCallback;
 }
 
 extern void goCallback2(unsigned char *buf, uint32_t len, void *ctx);
-rtlsdr_read_async_cb_t get_go_cb2() {
+static inline rtlsdr_read_async_cb_t get_go_cb2() {
 	return (rtlsdr_read_async_cb_t)goCallback2;
 }
 */
