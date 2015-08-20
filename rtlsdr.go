@@ -215,7 +215,7 @@ func (c *Context) Close() (err error) {
 //
 // Typically both ICs use the same clock. Changing the clock may make sense if
 // you are applying an external clock to the tuner or to compensate the
-// frequency (and samplerate) error caused by the original (cheap) crystal.
+// frequency (and sample rate) error caused by the original (cheap) crystal.
 //
 // Note, call this function only if you fully understand the implications.
 func (c *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) (err error) {
@@ -390,9 +390,9 @@ func (c *Context) SetTunerIfGain(stage, gainsTenthsDb int) (err error) {
 // SetTunerGainMode sets the gain mode (automatic/manual).
 // Manual gain mode must be enabled for the gain setter function to work.
 func (c *Context) SetTunerGainMode(manualMode bool) (err error) {
-	mode := 0
+	mode := 0 // automatic tuner gain
 	if manualMode {
-		mode = 1
+		mode = 1 // manual tuner gain
 	}
 	i := int(C.rtlsdr_set_tuner_gain_mode((*C.rtlsdr_dev_t)(c.dev),
 		C.int(mode)))
@@ -420,9 +420,9 @@ func (c *Context) GetSampleRate() (rateHz int) {
 // Test mode returns 8 bit counters instead of samples. Note,
 // the counter is generated inside the device.
 func (c *Context) SetTestMode(testMode bool) (err error) {
-	mode := 0
+	mode := 0 // test mode off
 	if testMode {
-		mode = 1
+		mode = 1 // test mode on
 	}
 	i := int(C.rtlsdr_set_testmode((*C.rtlsdr_dev_t)(c.dev),
 		C.int(mode)))
@@ -431,9 +431,9 @@ func (c *Context) SetTestMode(testMode bool) (err error) {
 
 // SetAgcMode sets the AGC mode.
 func (c *Context) SetAgcMode(AGCMode bool) (err error) {
-	mode := 0
+	mode := 0 // AGC off
 	if AGCMode {
-		mode = 1
+		mode = 1 // AGC on
 	}
 	i := int(C.rtlsdr_set_agc_mode((*C.rtlsdr_dev_t)(c.dev),
 		C.int(mode)))
@@ -476,9 +476,9 @@ func (c *Context) GetDirectSampling() (mode SamplingMode, err error) {
 // SetOffsetTuning sets the offset tuning mode for zero-IF tuners, which
 // avoids problems caused by the DC offset of the ADCs and 1/f noise.
 func (c *Context) SetOffsetTuning(enable bool) (err error) {
-	mode := 1
-	if !enable {
-		mode = 0
+	mode := 0 // offset tuning off
+	if enable {
+		mode = 1 // offset tuning on
 	}
 	i := int(C.rtlsdr_set_offset_tuning((*C.rtlsdr_dev_t)(c.dev), C.int(mode)))
 	return libusbError(i)
