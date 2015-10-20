@@ -95,12 +95,12 @@ func main() {
 	log.Printf("\tGetTunerType: %s\n", dev.GetTunerType())
 
 	//---------- Device Info ----------
-	info, err = dev.GetHwInfo()
+	info, err := dev.GetHwInfo()
 	if err != nil {
 		log.Printf("\tGetHwInfo Failed - error: %s\n", err)
 	} else {
-		log.Println("\tVendor ID     : ", info.VendorID)
-		log.Println("\tProduct ID    : ", info.ProductID)
+		log.Printf("\tVendor ID      : 0x%X\n", info.VendorID)
+		log.Printf("\tProduct ID     : 0x%X\n", info.ProductID)
 		log.Println("\tManufacturer  : ", info.Manufact)
 		log.Println("\tProduct       : ", info.Product)
 		log.Println("\tSerial        : ", info.Serial)
@@ -108,12 +108,12 @@ func main() {
 		log.Println("\tEnable IR     : ", info.EnableIR)
 		log.Println("\tRemote Wakeup : ", info.RemoteWakeup)
 
-		err = dev.SetHwInfo(info)
-		if err != nil {
-			log.Printf("\tSetHwInfo Failed - error: %s\n", err)
-		} else {
-			log.Printf("\ttSetHwInfo Successful\n")
-		}
+		// err = dev.SetHwInfo(info)
+		// if err != nil {
+		// 	log.Printf("\tSetHwInfo Failed - error: %s\n", err)
+		// } else {
+		// 	log.Printf("\ttSetHwInfo Successful\n")
+		// }
 	}
 
 	//---------- Get/Set Tuner Gains ----------

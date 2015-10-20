@@ -270,16 +270,16 @@ func (c *Context) WriteEeprom(data []uint8, offset uint8, leng uint16) (err erro
 		(*C.uint8_t)(unsafe.Pointer(&data[0])),
 		C.uint8_t(offset),
 		C.uint16_t(leng)))
-	switch i {
-	case 0:
-		err = nil
-	case -1:
-		err = errors.New("device handle is invalid")
-	case -2:
-		err = errors.New("EEPROM size exceeded")
-	case -3:
-		err = errors.New("no EEPROM was found")
+	switch {
 	default:
+		err = nil
+	case i == -1:
+		err = errors.New("device handle is invalid")
+	case i == -2:
+		err = errors.New("EEPROM size exceeded")
+	case i == -3:
+		err = errors.New("no EEPROM was found")
+	case i < -4:
 		err = errors.New("unknown error")
 	}
 	return
@@ -291,16 +291,16 @@ func (c *Context) ReadEeprom(data []uint8, offset uint8, leng uint16) (err error
 		(*C.uint8_t)(unsafe.Pointer(&data[0])),
 		C.uint8_t(offset),
 		C.uint16_t(leng)))
-	switch i {
-	case 0:
-		err = nil
-	case -1:
-		err = errors.New("device handle is invalid")
-	case -2:
-		err = errors.New("EEPROM size exceeded")
-	case -3:
-		err = errors.New("no EEPROM was found")
+	switch {
 	default:
+		err = nil
+	case i == -1:
+		err = errors.New("device handle is invalid")
+	case i == -2:
+		err = errors.New("EEPROM size exceeded")
+	case i == -3:
+		err = errors.New("no EEPROM was found")
+	case i < -4:
 		err = errors.New("unknown error")
 	}
 	return
@@ -621,13 +621,14 @@ func (c *Context) SetHwInfo(info HwInfo) (err error) {
 	if info.HaveSerial == true {
 		data[6] = 0xA5
 	}
+
 	if info.RemoteWakeup == true {
 		data[7] = data[7] | 0x01
 	}
+
 	if info.EnableIR == true {
 		data[7] = data[7] | 0x02
 	}
-
 	if err = SetStringDescriptors(info, data); err != nil {
 		return err
 	}
@@ -635,23 +636,29 @@ func (c *Context) SetHwInfo(info HwInfo) (err error) {
 }
 
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
-	if data[STR_OFFSET+1] != 0x03 {
-		err = errors.New("invalid string descriptor")
-		return
-	}
-	j := 0
-	k := 0
 	pos := STR_OFFSET
+	info := make([]string, 3)
 	for i := 0; i < 3; i++ {
-		len := int(data[pos])
-		m := make([]uint8, len)
-		for j = 2; j < len; j += 2 {
+		l := int(data[pos])
+		if l > (MAX_STR_SIZE*2)+2 {
+			err = errors.New("string value too long")
+			return
+		}
+		if data[pos+1] != 0x03 {
+			err = errors.New("string descriptor invalid")
+			return
+		}
+		j := 0
+		k := 0
+		m := make([]uint8, l-2)
+		for j = 2; j < l; j += 2 {
 			m[k] = data[pos+j]
 			k++
 		}
-		manufact = string(m)
+		info[i] = string(m)
 		pos += j
 	}
+	manufact, product, serial = info[0], info[1], info[2]
 	return
 }
 
@@ -670,16 +677,18 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 		err = errors.New(e + " string/s too long")
 		return
 	}
-	i := 0
 	pos := STR_OFFSET
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
-		data[pos] = uint8(len(v) * 2)
+		data[pos] = uint8((len(v) * 2) + 2)
 		data[pos+1] = 0x03
-		for i = 0; i < len(v); i += 2 {
-			data[pos+i] = v[0]
+		i := 0
+		j := 0
+		for i = 2; i <= len(v)*2; i += 2 {
+			data[pos+i] = v[j]
 			data[pos+i+1] = 0x00
+			j++
 		}
-		pos = i
+		pos += i
 	}
 	return
 }
