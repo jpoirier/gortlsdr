@@ -631,7 +631,7 @@ func (c *Context) SetHwInfo(info HwInfo) (err error) {
 	if err = SetStringDescriptors(info, data); err != nil {
 		return err
 	}
-	return c.WriteEeprom(data, 0, EEPROM_SIZE) (err error)
+	return c.WriteEeprom(data, 0, EEPROM_SIZE)
 }
 
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
@@ -642,7 +642,8 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 	pos := STR_OFFSET
 	for i := 0; i < 3; i++ {
 		len := int(data[pos])
-		for k := 0, j := 2; j < len; j += 2 {
+		k := 0
+		for j := 2; j < len; j += 2 {
 			manufact[k++] = data[pos + j];
 		}
 		pos += j
@@ -650,7 +651,7 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 }
 
 func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
-	e := ''
+	e := ""
 	if len(info.Manufact) > MAX_STR_SIZE {
 		e += "Manufact:"
 	}
@@ -667,7 +668,7 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 	pos := STR_OFFSET
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
 		data[pos] = len(v) * 2
-		data[pos + 1] = = 0x03
+		data[pos + 1] = 0x03
 		for i := 0; i < len(v); i += 2 {
 			data[pos + i] = v[0]
 			data[pos + i + 1] = 0x00
