@@ -68,16 +68,16 @@ type CustUserCtx struct {
 	Userctx  *UserCtx
 }
 
-//
+// HwInfo
 type HwInfo struct {
 	VendorID     uint16
 	ProductID    uint16
 	Manufact     string
 	Product      string
 	Serial       string
-	HaveSerial   bool // int
-	EnableIR     bool // int
-	RemoteWakeup bool // int
+	HaveSerial   bool
+	EnableIR     bool
+	RemoteWakeup bool
 }
 
 const (
@@ -584,7 +584,7 @@ func (c *Context) CancelAsync() (err error) {
 	return libusbError(i)
 }
 
-//
+// GetHwInfo gets the dongle's information items.
 func (c *Context) GetHwInfo() (info HwInfo, err error) {
 	data := make([]uint8, EEPROM_SIZE)
 	if err = c.ReadEeprom(data, 0, EEPROM_SIZE); err != nil {
@@ -609,7 +609,7 @@ func (c *Context) GetHwInfo() (info HwInfo, err error) {
 	return
 }
 
-//
+// SetHwInfo sets the dongle's information items.
 func (c *Context) SetHwInfo(info HwInfo) (err error) {
 	data := make([]uint8, EEPROM_SIZE)
 	data[0] = 0x28
