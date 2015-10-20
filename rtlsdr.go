@@ -599,10 +599,10 @@ func (c *Context) GetHwInfo() (info HwInfo, err error) {
 	if data[6] == 0xA5 {
 		info.HaveSerial = true
 	}
-	if data[7] & 0x01 {
+	if t := data[7] & 0x01; t == 1 {
 		info.RemoteWakeup = true
 	}
-	if data[7] & 0x02 {
+	if t := data[7] & 0x02; t == 2 {
 		info.EnableIR = true
 	}
 	info.Manufact, info.Product, info.Serial, err = GetStringDescriptors(data)
@@ -640,14 +640,16 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 		return
 	}
 	j := 0
+	k := 0
 	pos := STR_OFFSET
 	for i := 0; i < 3; i++ {
 		len := int(data[pos])
-		k := 0
+		m := make([]uint8, len)
 		for j = 2; j < len; j += 2 {
-			manufact[k] = data[pos+j]
+			m[k] = data[pos+j]
 			k++
 		}
+		manufact = string(m)
 		pos += j
 	}
 	return
