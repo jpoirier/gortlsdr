@@ -68,6 +68,24 @@ type CustUserCtx struct {
 	Userctx  *UserCtx
 }
 
+//
+type HwInfo struct {
+	VendorID     uint16
+	ProductID    uint16
+	Manufact     string
+	Product      string
+	Serial       string
+	HaveSerial   bool // int
+	EnableIR     bool // int
+	RemoteWakeup bool // int
+}
+
+const (
+	EEPROM_SIZE	= 256
+	MAX_STR_SIZE = 35
+	STR_OFFSET = 0x09
+)
+
 // SamplingMode is the sampling mode type.
 type SamplingMode int
 
@@ -564,4 +582,96 @@ func (c *Context) ReadAsync2(custctx *CustUserCtx, bufNum, bufLen int) (err erro
 func (c *Context) CancelAsync() (err error) {
 	i := int(C.rtlsdr_cancel_async((*C.rtlsdr_dev_t)(c.dev)))
 	return libusbError(i)
+}
+
+//
+func (c *Context) GetHwInfo() (info HwInfo, err error) {
+	data := make([]uint8, EEPROM_SIZE)
+	if err = c.ReadEeprom(data, 0, EEPROM_SIZE); err != nil {
+		return
+	}
+	if ((data[0] != 0x28) || (data[1] != 0x32)) {
+		err = errors.New("no valid RTL2832 EEPROM header")
+		return
+	}
+	info.vendorID = (uint16(data[3]) << 8) | uint16(data[2])
+	info.productID = (uint16(data[5]) << 8) | uint16(data[4])
+	if data[6] == 0xA5 {
+		info.HaveSerial = true
+	}
+	if data[7] & 0x01 {
+		info.RemoteWakeup = true
+	}
+	if data[7] & 0x02 {
+		info.EnableIR = true
+	}
+	info.Manufact, info.Product, info.Serial, err = GetStringDescriptors(data)
+	return
+}
+
+//
+func (c *Context) SetHwInfo(info HwInfo) (err error) {
+	data := make([]uint8, EEPROM_SIZE)
+	data[0] = 0x28
+	data[1] = 0x32
+	data[2] = uint8(info.VendorID)
+	data[3] = uint8(info.VendorID >> 8)
+	data[4] = uint8(info.ProductID)
+	data[5] = uint8(info.ProductID >> 8)
+	if info.HaveSerial == true {
+		data[6] = 0xA5
+	}
+	if info.RemoteWakeup == true {
+		data[7] = data[7] | 0x01
+	}
+	if info.EnableIR == true {
+		data[7] = data[7] | 0x02
+	}
+
+	if err = SetStringDescriptors(info, data); err != nil {
+		return err
+	}
+	return c.WriteEeprom(data, 0, EEPROM_SIZE) (err error)
+}
+
+func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
+	if (data[STR_OFFSET + 1] != 0x03) {
+		err = errors.New("invalid string descriptor")
+		return
+	}
+	pos := STR_OFFSET
+	for i := 0; i < 3; i++ {
+		len := int(data[pos])
+		for k := 0, j := 2; j < len; j += 2 {
+			manufact[k++] = data[pos + j];
+		}
+		pos += j
+	}
+}
+
+func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
+	e := ''
+	if len(info.Manufact) > MAX_STR_SIZE {
+		e += "Manufact:"
+	}
+	if len(info.Product) > MAX_STR_SIZE {
+		e += "Product:"
+	}
+	if len(info.Serial) > MAX_STR_SIZE {
+		e += "Serial:"
+	}
+	if len(e) != 0 {
+		err = errors.New(e + " string/s too long")
+		return
+	}
+	pos := STR_OFFSET
+	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
+		data[pos] = len(v) * 2
+		data[pos + 1] = = 0x03
+		for i := 0; i < len(v); i += 2 {
+			data[pos + i] = v[0]
+			data[pos + i + 1] = 0x00
+		}
+		pos = i
+	}
 }
