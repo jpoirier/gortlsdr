@@ -639,7 +639,7 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 		err = errors.New("invalid string descriptor")
 		return
 	}
-	var j
+	j := 0
 	pos := STR_OFFSET
 	for i := 0; i < 3; i++ {
 		len := int(data[pos])
@@ -668,7 +668,7 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 		err = errors.New(e + " string/s too long")
 		return
 	}
-	var i
+	i := 0
 	pos := STR_OFFSET
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
 		data[pos] = uint8(len(v) * 2)
