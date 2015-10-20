@@ -594,8 +594,8 @@ func (c *Context) GetHwInfo() (info HwInfo, err error) {
 		err = errors.New("no valid RTL2832 EEPROM header")
 		return
 	}
-	info.vendorID = (uint16(data[3]) << 8) | uint16(data[2])
-	info.productID = (uint16(data[5]) << 8) | uint16(data[4])
+	info.VendorID = (uint16(data[3]) << 8) | uint16(data[2])
+	info.ProductID = (uint16(data[5]) << 8) | uint16(data[4])
 	if data[6] == 0xA5 {
 		info.HaveSerial = true
 	}
@@ -639,16 +639,18 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 		err = errors.New("invalid string descriptor")
 		return
 	}
+	var j
 	pos := STR_OFFSET
 	for i := 0; i < 3; i++ {
 		len := int(data[pos])
 		k := 0
-		for j := 2; j < len; j += 2 {
+		for j = 2; j < len; j += 2 {
 			manufact[k] = data[pos+j]
 			k++
 		}
 		pos += j
 	}
+	return
 }
 
 func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
@@ -666,14 +668,16 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 		err = errors.New(e + " string/s too long")
 		return
 	}
+	var i
 	pos := STR_OFFSET
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
-		data[pos] = len(v) * 2
+		data[pos] = uint8(len(v) * 2)
 		data[pos+1] = 0x03
-		for i := 0; i < len(v); i += 2 {
+		for i = 0; i < len(v); i += 2 {
 			data[pos+i] = v[0]
 			data[pos+i+1] = 0x00
 		}
 		pos = i
 	}
+	return
 }
