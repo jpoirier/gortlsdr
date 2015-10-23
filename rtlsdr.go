@@ -81,7 +81,9 @@ type HwInfo struct {
 }
 
 const (
-	EEPROM_SIZE  = 256
+	EEPROM_SIZE = 256
+	// MAX_STR_SIZE = (max string length - 2 (header bytes)) \ 2. Where each
+	// info character is followed by a null char.
 	MAX_STR_SIZE = 35
 	STR_OFFSET   = 0x09
 )
@@ -635,10 +637,11 @@ func (c *Context) SetHwInfo(info HwInfo) (err error) {
 	return c.WriteEeprom(data, 0, EEPROM_SIZE)
 }
 
+// GetStringDescriptors gets the manufacturer, product, and serial
+// strings from the hardware's eeprom.
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
 	pos := STR_OFFSET
-	info := make([]string, 3)
-	for i := 0; i < 3; i++ {
+	for _, v := range []*string{&manufact, &product, &serial} {
 		l := int(data[pos])
 		if l > (MAX_STR_SIZE*2)+2 {
 			err = errors.New("string value too long")
@@ -655,13 +658,14 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 			m[k] = data[pos+j]
 			k++
 		}
-		info[i] = string(m)
+		*v = string(m)
 		pos += j
 	}
-	manufact, product, serial = info[0], info[1], info[2]
 	return
 }
 
+// SetStringDescriptors sets the manufacturer, product, and serial
+// strings on the hardware's eeprom.
 func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 	e := ""
 	if len(info.Manufact) > MAX_STR_SIZE {
