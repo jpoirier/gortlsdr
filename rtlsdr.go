@@ -39,7 +39,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb2() {
 import "C"
 
 // Current version.
-var PackageVersion = "v2.9"
+var PackageVersion = "v2.91"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte, *UserCtx)
@@ -84,8 +84,8 @@ const (
 	EEPROM_SIZE = 256
 	// MAX_STR_SIZE = (max string length - 2 (header bytes)) \ 2. Where each
 	// info character is followed by a null char.
-	MAX_STR_SIZE = 35
-	STR_OFFSET   = 0x09
+	MAX_STR_SIZE     = 35
+	STR_OFFSET_START = 0x09
 )
 
 // SamplingMode is the sampling mode type.
@@ -640,7 +640,7 @@ func (c *Context) SetHwInfo(info HwInfo) (err error) {
 // GetStringDescriptors gets the manufacturer, product, and serial
 // strings from the hardware's eeprom.
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
-	pos := STR_OFFSET
+	pos := STR_OFFSET_START
 	for _, v := range []*string{&manufact, &product, &serial} {
 		l := int(data[pos])
 		if l > (MAX_STR_SIZE*2)+2 {
@@ -681,7 +681,7 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 		err = errors.New(e + " string/s too long")
 		return
 	}
-	pos := STR_OFFSET
+	pos := STR_OFFSET_START
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
 		data[pos] = uint8((len(v) * 2) + 2)
 		data[pos+1] = 0x03
