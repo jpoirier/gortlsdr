@@ -324,6 +324,11 @@ func (c *Context) GetCenterFreq() (freqHz int) {
 func (c *Context) SetFreqCorrection(freqHz int) (err error) {
 	i := int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(c.dev),
 		C.int(freqHz)))
+	// error code -2 means the requested PPM is the same as
+	// the current PPM (dev->corr == PPM)
+	if i == -2 {
+		return libusbError(0)
+	}
 	return libusbError(i)
 }
 
