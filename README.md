@@ -1,3 +1,4 @@
+[![Circle CI](https://circleci.com/gh/jpoirier/gortlsdr/tree/master.svg?style=svg)](https://circleci.com/gh/jpoirier/gortlsdr/tree/master)
 [![Godoc reference](https://godoc.org/github.com/jpoirier/gortlsdr?status.svg)](https://godoc.org/github.com/jpoirier/gortlsdr)
 [![BSD3 License](http://img.shields.io/badge/license-BSD3-brightgreen.svg)](https://tldrlegal.com/license/bsd-3-clause-license-%28revised%29)
 
