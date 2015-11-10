@@ -1,5 +1,6 @@
 [![Build Status](http://circleci-badges-max.herokuapp.com/img/jpoirier/gortlsdr/master?token=:circle-ci-token)](https://circleci.com/gh/jpoirier/gortlsdr/tree/master)
 [![Godoc reference](https://godoc.org/github.com/jpoirier/gortlsdr?status.svg)](https://godoc.org/github.com/jpoirier/gortlsdr)
+[![Go Report Card](http://goreportcard.com/badge/jpoirier/gortlsdr)](http://goreportcard.com/report/jpoirier/gortlsdr)
 [![BSD3 License](http://img.shields.io/badge/license-BSD3-brightgreen.svg)](https://tldrlegal.com/license/bsd-3-clause-license-%28revised%29)
 
 # Description
