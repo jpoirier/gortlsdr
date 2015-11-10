@@ -353,7 +353,7 @@ func (c *Context) GetTunerType() (tunerType string) {
 func (c *Context) GetTunerGains() (gainsTenthsDb []int, err error) {
 	//	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
 	i := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev),
-		(*C.int)(unsafe.Pointer(uintptr(0)))))
+		(*C.int)(unsafe.Pointer(nil))))
 	if i < 0 {
 		return gainsTenthsDb, libusbError(i)
 	} else if i == 0 {

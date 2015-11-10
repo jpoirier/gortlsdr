@@ -280,7 +280,7 @@ func main() {
 	go asyncStop(dev, IQch)
 	sendPing = true
 
-	log.Println("\nSleeping...\n")
+	log.Println("\nSleeping...")
 	time.Sleep(2 * time.Second)
 
 	// Use the new ReadAsync2 method which uses the new rtl.CustUserCtx
