@@ -1,3 +1,4 @@
+[![gortlsdr version](https://img.shields.io/github/tag/jpoirier/gortlsdr.svg?style=flat&label=gortlsdr)](https://github.com/jpoirier/gortlsdr/releases)
 [![Build Status](http://circleci-badges-max.herokuapp.com/img/jpoirier/gortlsdr/master?token=:circle-ci-token)](https://circleci.com/gh/jpoirier/gortlsdr/tree/master)
 [![Godoc reference](https://godoc.org/github.com/jpoirier/gortlsdr?status.svg)](https://godoc.org/github.com/jpoirier/gortlsdr)
 [![Go Report Card](http://goreportcard.com/badge/jpoirier/gortlsdr)](http://goreportcard.com/report/jpoirier/gortlsdr)
