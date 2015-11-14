@@ -31,9 +31,9 @@ All functions in librtlsdr are accessible from the gortlsdr package:
     go get -u github.com/jpoirier/gortlsdr
 
 ## Example
-See the rtlsdr_eample.go file:
+See the eample.go file:
 
-    go run rtlsdr_example.go
+    go run example.go
 
 ## Windows
 If you don't want to build the librtlsdr and libusb dependencies from source you can use the librtlsdr pre-built package,
@@ -62,7 +62,7 @@ Building gortlsdr on Windows:
           go install github.com/jpoirier/gortlsdr
 
 * Insert the DVB-T/DAB/FM dongle into a USB port, open a shell window in go-pkgs\src\github.com\jpoirier\gortlsdr and run
-  the example program: go run rtlsdr_example.go. Note, the pre-built rtl-sdr package contains several test executables as well.
+  the example program: go run example.go. Note, the pre-built rtl-sdr package contains several test executables as well.
 
 
 # Credit
@@ -71,8 +71,5 @@ Building gortlsdr on Windows:
 * [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing!
 
 # Todo
-* create a plotting example using [plotinum](https://code.google.com/p/plotinum)
-* create a Go port of librtlsdr's rtl_fm.c
-* remove the rtl-sdr dependency using [gousb](https://github.com/kylelemons/gousb) and [go-dsp](https://github.com/mjibson/go-dsp)
 
 -joe
