@@ -8,58 +8,167 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	rtl "github.com/jpoirier/gortlsdr"
-	// "unsafe"
 )
 
-var sendPing = true
+// UAT holds a device context.
+type UAT struct {
+	dev *rtl.Context
+	wg  *sync.WaitGroup
+}
 
-// rtlsdrCb is used for asynchronous streaming. It's our
-// callback function rtl-sdr callback function.
-func rtlsdrCb(buf []byte, userctx *rtl.UserCtx) {
-	if sendPing {
-		log.Println("sendPing = false")
-		sendPing = false
-		// send a ping to asyncStop
-		if c, ok := (*userctx).(chan bool); ok {
-			c <- true // async-read done signal
-		} else {
-			log.Println("fail...")
+// read does synchronous specific reads.
+func (u *UAT) read() {
+	defer u.wg.Done()
+	log.Println("Entered UAT read() ...")
+
+	var readCnt uint64
+	var buffer = make([]uint8, rtl.DefaultBufLength)
+	for {
+		nRead, err := u.dev.ReadSync(buffer, rtl.DefaultBufLength)
+		if err != nil {
+			// log.Printf("\tReadSync Failed - error: %s\n", err)
+			break
+		}
+		// log.Printf("\tReadSync %d\n", nRead)
+		if nRead > 0 {
+			// buf := buffer[:nRead]
+			fmt.Printf("\rnRead %d: readCnt: %d", nRead, readCnt)
+			readCnt++
 		}
 	}
-	log.Printf("Length of async-read buffer: %d\n", len(buf))
 }
 
-// asyncStop pends for a ping from the rtlsdrCb function
-// callback, and when received cancel the async callback.
-func asyncStop(dev *rtl.Context, c chan bool) {
-	log.Println("asyncStop running...")
-	<-c
-	log.Println("Received ping from rtlsdrCb, calling CancelAsync")
-	if err := dev.CancelAsync(); err != nil {
-		log.Printf("CancelAsync failed - %s\n", err)
-	} else {
-		log.Printf("CancelAsync successful\n")
+// shutdown
+func (u *UAT) shutdown() {
+	fmt.Println("\n")
+	log.Println("\nEntered UAT shutdown() ...")
+	log.Println("UAT shutdown(): closing device ...")
+	u.dev.Close() // preempt the blocking ReadSync call
+	log.Println("UAT shutdown(): calling uatWG.Wait() ...")
+	u.wg.Wait() // Wait for the goroutine to shutdown
+	log.Println("UAT shutdown(): uatWG.Wait() returned...")
+}
+
+// sdrConfig configures the device to 978 MHz UAT channel.
+func (u *UAT) sdrConfig(indexID int) (err error) {
+	if u.dev, err = rtl.Open(indexID); err != nil {
+		log.Printf("\tUAT Open Failed...\n")
+		return
 	}
-	//os.Exit(0)
+	log.Printf("\tGetTunerType: %s\n", u.dev.GetTunerType())
+
+	//---------- Set Tuner Gain ----------
+	err = u.dev.SetTunerGainMode(true)
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tSetTunerGainMode Failed - error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tSetTunerGainMode Successful\n")
+	}
+
+	tgain := 480
+	err = u.dev.SetTunerGain(tgain)
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tSetTunerGain Failed - error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tSetTunerGain Successful\n")
+	}
+
+	//---------- Get/Set Sample Rate ----------
+	samplerate := 2083334
+	err = u.dev.SetSampleRate(samplerate)
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tSetSampleRate Failed - error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tSetSampleRate - rate: %d\n", samplerate)
+	}
+	log.Printf("\tGetSampleRate: %d\n", u.dev.GetSampleRate())
+
+	//---------- Get/Set Xtal Freq ----------
+	rtlFreq, tunerFreq, err := u.dev.GetXtalFreq()
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tGetXtalFreq Failed - error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtlFreq, tunerFreq)
+	}
+
+	newRTLFreq := 28800000
+	newTunerFreq := 28800000
+	err = u.dev.SetXtalFreq(newRTLFreq, newTunerFreq)
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tSetXtalFreq Failed - error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tSetXtalFreq - Center freq: %d, Tuner freq: %d\n",
+			newRTLFreq, newTunerFreq)
+	}
+
+	//---------- Get/Set Center Freq ----------
+	err = u.dev.SetCenterFreq(978000000)
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tSetCenterFreq 978MHz Failed, error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tSetCenterFreq 978MHz Successful\n")
+	}
+
+	log.Printf("\tGetCenterFreq: %d\n", u.dev.GetCenterFreq())
+
+	//---------- Set Bandwidth ----------
+	bw := 1000000
+	log.Printf("\tSetting Bandwidth: %d\n", bw)
+	if err = u.dev.SetTunerBw(bw); err != nil {
+		u.dev.Close()
+		log.Printf("\tSetTunerBw %d Failed, error: %s\n", bw, err)
+		return
+	} else {
+		log.Printf("\tSetTunerBw %d Successful\n", bw)
+	}
+
+	if err = u.dev.ResetBuffer(); err != nil {
+		u.dev.Close()
+		log.Printf("\tResetBuffer Failed - error: %s\n", err)
+		return
+	} else {
+		log.Printf("\tResetBuffer Successful\n")
+	}
+	//---------- Get/Set Freq Correction ----------
+	freqCorr := u.dev.GetFreqCorrection()
+	log.Printf("\tGetFreqCorrection: %d\n", freqCorr)
+	err = u.dev.SetFreqCorrection(freqCorr)
+	if err != nil {
+		u.dev.Close()
+		log.Printf("\tSetFreqCorrection %d Failed, error: %s\n", freqCorr, err)
+		return
+	} else {
+		log.Printf("\tSetFreqCorrection %d Successful\n", freqCorr)
+	}
+	return
 }
 
-func sigAbort(dev *rtl.Context) {
+// sigAbort
+func (u *UAT) sigAbort() {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT)
 	<-ch
-	_ = dev.CancelAsync()
-	dev.Close()
+	u.shutdown()
 	os.Exit(0)
 }
 
 func main() {
-	var err error
-	var dev *rtl.Context
-
 	//---------- Device Check ----------
 	if c := rtl.GetDeviceCount(); c == 0 {
 		log.Fatal("No devices found, exiting.\n")
@@ -73,225 +182,17 @@ func main() {
 				err, m, p, s)
 		}
 	}
-
-	log.Printf("===== Device name: %s =====\n", rtl.GetDeviceName(0))
+	indexID := 0
+	log.Printf("===== Device name: %s =====\n", rtl.GetDeviceName(indexID))
 	log.Printf("===== Running tests using device indx: 0 =====\n")
 
-	//---------- Open Device ----------
-	if dev, err = rtl.Open(0); err != nil {
-		log.Fatal("\tOpen Failed, exiting\n")
+	uatDev := &UAT{}
+	if err := uatDev.sdrConfig(indexID); err != nil {
+		log.Fatal("uatDev = &UAT{indexID: id} failed: %s\n", err)
 	}
-	defer dev.Close()
-	go sigAbort(dev)
-
-	//---------- Device Strings ----------
-	m, p, s, err := dev.GetUsbStrings()
-	if err != nil {
-		log.Printf("\tGetUsbStrings Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tGetUsbStrings - %s %s %s\n", m, p, s)
-	}
-
-	log.Printf("\tGetTunerType: %s\n", dev.GetTunerType())
-
-	//---------- Device Info ----------
-	info, err := dev.GetHwInfo()
-	if err != nil {
-		log.Printf("\tGetHwInfo Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tVendor ID      : 0x%X\n", info.VendorID)
-		log.Printf("\tProduct ID     : 0x%X\n", info.ProductID)
-		log.Println("\tManufacturer  : ", info.Manufact)
-		log.Println("\tProduct       : ", info.Product)
-		log.Println("\tSerial        : ", info.Serial)
-		log.Println("\tHave Serial   : ", info.HaveSerial)
-		log.Println("\tEnable IR     : ", info.EnableIR)
-		log.Println("\tRemote Wakeup : ", info.RemoteWakeup)
-
-		// err = dev.SetHwInfo(info)
-		// if err != nil {
-		// 	log.Printf("\tSetHwInfo Failed - error: %s\n", err)
-		// } else {
-		// 	log.Printf("\ttSetHwInfo Successful\n")
-		// }
-	}
-
-	//---------- Get/Set Tuner Gains ----------
-	g, err := dev.GetTunerGains()
-	if err != nil {
-		log.Printf("\tGetTunerGains Failed - error: %s\n", err)
-	} else {
-		gains := fmt.Sprintf("\tGains: ")
-		for _, j := range g {
-			gains += fmt.Sprintf("%d ", j)
-		}
-		log.Printf("%s\n", gains)
-	}
-
-	tgain := dev.GetTunerGain()
-	log.Printf("\tGetTunerGain: %d\n", tgain)
-
-	err = dev.SetTunerGainMode(true)
-	if err != nil {
-		log.Printf("\tSetTunerGainMode Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tSetTunerGainMode Successful\n")
-	}
-
-	err = dev.SetTunerGain(tgain)
-	if err != nil {
-		log.Printf("\tSetTunerGain Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tSetTunerGain Successful\n")
-	}
-
-	//---------- Get/Set Sample Rate ----------
-	err = dev.SetSampleRate(rtl.DefaultSampleRate)
-	if err != nil {
-		log.Printf("\tSetSampleRate Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tSetSampleRate - rate: %d\n", rtl.DefaultSampleRate)
-	}
-	log.Printf("\tGetSampleRate: %d\n", dev.GetSampleRate())
-
-	//---------- Get/Set Xtal Freq ----------
-	rtlFreq, tunerFreq, err := dev.GetXtalFreq()
-	if err != nil {
-		log.Printf("\tGetXtalFreq Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtlFreq, tunerFreq)
-	}
-
-	err = dev.SetXtalFreq(rtlFreq, tunerFreq)
-	if err != nil {
-		log.Printf("\tSetXtalFreq Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tSetXtalFreq - Center freq: %d, Tuner freq: %d\n",
-			rtlFreq, tunerFreq)
-	}
-
-	//---------- Get/Set Center Freq ----------
-	err = dev.SetCenterFreq(978000000)
-	if err != nil {
-		log.Printf("\tSetCenterFreq 978MHz Failed, error: %s\n", err)
-	} else {
-		log.Printf("\tSetCenterFreq 978MHz Successful\n")
-	}
-
-	log.Printf("\tGetCenterFreq: %d\n", dev.GetCenterFreq())
-
-	//---------- Set Bandwidth ----------
-	bandwidths := []int{300000, 400000, 550000, 700000, 1000000, 1200000,
-		1300000, 1600000, 2200000, 3000000, 4000000, 5000000, 6000000, 7000000}
-	for _, bw := range bandwidths {
-		log.Printf("\tSetting Bandwidth: %d\n", bw)
-		if err = dev.SetTunerBw(bw); err != nil {
-			log.Printf("\tSetTunerBw %d Failed, error: %s\n", bw, err)
-		} else {
-			log.Printf("\tSetTunerBw %d Successful\n", bw)
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	//---------- Get/Set Freq Correction ----------
-	freqCorr := dev.GetFreqCorrection()
-	log.Printf("\tGetFreqCorrection: %d\n", freqCorr)
-	err = dev.SetFreqCorrection(10) // 10ppm
-	if err != nil {
-		log.Printf("\tSetFreqCorrection %d Failed, error: %s\n", 10, err)
-	} else {
-		log.Printf("\tSetFreqCorrection %d Successful\n", 10)
-	}
-
-	//---------- Get/Set AGC Mode ----------
-	if err = dev.SetAgcMode(false); err == nil {
-		log.Printf("\tSetAgcMode off Successful\n")
-	} else {
-		log.Printf("\tSetAgcMode Failed, error: %s\n", err)
-	}
-
-	//---------- Get/Set Direct Sampling ----------
-	if mode, err := dev.GetDirectSampling(); err == nil {
-		log.Printf("\tGetDirectSampling Successful, mode: %s\n",
-			rtl.SamplingModes[mode])
-	} else {
-		log.Printf("\tSetTestMode 'On' Failed - error: %s\n", err)
-	}
-
-	if err = dev.SetDirectSampling(rtl.SamplingNone); err == nil {
-		log.Printf("\tSetDirectSampling 'On' Successful\n")
-	} else {
-		log.Printf("\tSetDirectSampling 'On' Failed - error: %s\n", err)
-	}
-
-	//---------- Get/Set Tuner IF Gain ----------
-	// if err = SetTunerIfGain(stage, gain: int); err == nil {
-	// 	log.Printf("\SetTunerIfGain Successful\n")
-	// } else {
-	// 	log.Printf("\tSetTunerIfGain Failed - error: %s\n", err)
-	// }
-
-	//---------- Get/Set test mode ----------
-	if err = dev.SetTestMode(true); err == nil {
-		log.Printf("\tSetTestMode 'On' Successful\n")
-	} else {
-		log.Printf("\tSetTestMode 'On' Failed - error: %s\n", err)
-	}
-
-	if err = dev.SetTestMode(false); err == nil {
-		log.Printf("\tSetTestMode 'Off' Successful\n")
-	} else {
-		log.Printf("\tSetTestMode 'Off' Fail - error: %s\n", err)
-	}
-
-	//---------- Get/Set misc. streaming ----------
-	if err = dev.ResetBuffer(); err == nil {
-		log.Printf("\tResetBuffer Successful\n")
-	} else {
-		log.Printf("\tResetBuffer Failed - error: %s\n", err)
-	}
-
-	var buffer = make([]uint8, rtl.DefaultBufLength)
-	nRead, err := dev.ReadSync(buffer, rtl.DefaultBufLength)
-	if err != nil {
-		log.Printf("\tReadSync Failed - error: %s\n", err)
-	} else {
-		log.Printf("\tReadSync %d\n", nRead)
-	}
-	if err == nil && nRead < rtl.DefaultBufLength {
-		log.Printf("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-nRead)
-	}
-
-	// Note, ReadAsync blocks until CancelAsync is called, so spawn
-	// a goroutine running in its own system thread that'll wait
-	// for the async-read callback to signal when it's done.
-	IQch := make(chan bool)
-	go asyncStop(dev, IQch)
-	var userctx rtl.UserCtx = IQch
-
-	err = dev.ReadAsync(rtlsdrCb, &userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-	if err == nil {
-		log.Printf("\tReadAsync Successful\n")
-	} else {
-		log.Printf("\tReadAsync Fail - error: %s\n", err)
-	}
-
-	// setup for the second async read session
-	go asyncStop(dev, IQch)
-	sendPing = true
-
-	log.Println("\nSleeping...")
-	time.Sleep(2 * time.Second)
-
-	// Use the new ReadAsync2 method which uses the new rtl.CustUserCtx
-	// type.
-	custctx := &rtl.CustUserCtx{ClientCb: rtlsdrCb, Userctx: &userctx}
-	err = dev.ReadAsync2(custctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-	if err == nil {
-		log.Printf("\tSecond ReadAsync Successful\n")
-	} else {
-		log.Printf("\tReadAsync Fail - error: %s\n", err)
-	}
-
-	log.Printf("Exiting...\n")
+	uatDev.wg = &sync.WaitGroup{}
+	uatDev.wg.Add(1)
+	fmt.Printf("\n======= CTRL+C to exit... =======\n\n")
+	go uatDev.read()
+	uatDev.sigAbort()
 }

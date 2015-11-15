@@ -26,25 +26,25 @@ import (
 #include <stdlib.h>
 #include <rtl-sdr.h>
 
-extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
-static inline rtlsdr_read_async_cb_t get_go_cb() {
-	return (rtlsdr_read_async_cb_t)goCallback;
-}
+// extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
+// static inline rtlsdr_read_async_cb_t get_go_cb() {
+//  	return (rtlsdr_read_async_cb_t)goCallback;
+//}
 
-extern void goCallback2(unsigned char *buf, uint32_t len, void *ctx);
-static inline rtlsdr_read_async_cb_t get_go_cb2() {
-	return (rtlsdr_read_async_cb_t)goCallback2;
-}
+//extern void goCallback2(unsigned char *buf, uint32_t len, void *ctx);
+//static inline rtlsdr_read_async_cb_t get_go_cb2() {
+//	return (rtlsdr_read_async_cb_t)goCallback2;
+//}
 */
 import "C"
 
 // Current version.
-var PackageVersion = "v2.9.4"
+var PackageVersion = "v2.9.5"
 
 // ReadAsyncCbT defines a user callback function type.
-type ReadAsyncCbT func([]byte, *UserCtx)
+// type ReadAsyncCbT func([]byte, *UserCtx)
 
-var clientCb ReadAsyncCbT
+// var clientCb ReadAsyncCbT
 
 // Context is the opened device's context.
 type Context struct {
@@ -61,14 +61,14 @@ type Context struct {
 // A channel type assertion:  c, ok := (*userctx).(chan bool)
 //
 // A user context assertion:  device := (*userctx).(*rtl.Context)
-type UserCtx interface{}
+// type UserCtx interface{}
 
 // CustUserCtx allows a user to specify a unique callback function
 // and context with each call to ReadAsync2.
-type CustUserCtx struct {
-	ClientCb ReadAsyncCbT
-	Userctx  *UserCtx
-}
+// type CustUserCtx struct {
+// 	ClientCb ReadAsyncCbT
+// 	Userctx  *UserCtx
+// }
 
 // HwInfo holds dongle specific information.
 type HwInfo struct {
@@ -543,6 +543,11 @@ func (c *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 	return nRead, libError(i)
 }
 
+// Due to the restrictions imposed by the following
+// "Rules for passing pointers between Go and C"
+// https://github.com/golang/proposal/blob/master/design/12416-cgo-pointers.md
+// the callback functions have been deprecated.
+
 // ReadAsync reads samples asynchronously. Note, this function
 // will block until canceled using CancelAsync. ReadAsyncCbT is
 // a package global variable and therefore unsafe for use with
@@ -555,16 +560,16 @@ func (c *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (c *Context) ReadAsync(f ReadAsyncCbT, userctx *UserCtx, bufNum,
-	bufLen int) (err error) {
-	clientCb = f
-	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
-		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
-		unsafe.Pointer(userctx),
-		C.uint32_t(bufNum),
-		C.uint32_t(bufLen)))
-	return libError(i)
-}
+// func (c *Context) ReadAsync(f ReadAsyncCbT, userctx *UserCtx, bufNum,
+// 	bufLen int) (err error) {
+// 	clientCb = f
+// 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
+// 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
+// 		unsafe.Pointer(userctx),
+// 		C.uint32_t(bufNum),
+// 		C.uint32_t(bufLen)))
+// 	return libError(i)
+// }
 
 // ReadAsync2 reads samples asynchronously. The CustUserCtx type allows
 // a user to specify a unique callback function and context with each
@@ -575,20 +580,20 @@ func (c *Context) ReadAsync(f ReadAsyncCbT, userctx *UserCtx, bufNum,
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (c *Context) ReadAsync2(custctx *CustUserCtx, bufNum, bufLen int) (err error) {
-	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
-		(C.rtlsdr_read_async_cb_t)(C.get_go_cb2()),
-		unsafe.Pointer(custctx),
-		C.uint32_t(bufNum),
-		C.uint32_t(bufLen)))
-	return libError(i)
-}
+// func (c *Context) ReadAsync2(custctx *CustUserCtx, bufNum, bufLen int) (err error) {
+// 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(c.dev),
+// 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb2()),
+// 		unsafe.Pointer(custctx),
+// 		C.uint32_t(bufNum),
+// 		C.uint32_t(bufLen)))
+// 	return libError(i)
+// }
 
 // CancelAsync cancels all pending asynchronous operations.
-func (c *Context) CancelAsync() (err error) {
-	i := int(C.rtlsdr_cancel_async((*C.rtlsdr_dev_t)(c.dev)))
-	return libError(i)
-}
+// func (c *Context) CancelAsync() (err error) {
+// 	i := int(C.rtlsdr_cancel_async((*C.rtlsdr_dev_t)(c.dev)))
+// 	return libError(i)
+// }
 
 // GetHwInfo gets the dongle's information items.
 func (c *Context) GetHwInfo() (info HwInfo, err error) {
