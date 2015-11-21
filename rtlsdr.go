@@ -539,6 +539,9 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 // Due to the restrictions imposed by the new
 // "Rules for passing pointers between Go and C" at
 // https://github.com/golang/proposal/blob/master/design/12416-cgo-pointers.md
+// and https://github.com/golang/go/issues/12416
+// https://groups.google.com/forum/#!topic/golang-dev/S7zPrUEkbKs
+// https://go-review.googlesource.com/#/c/16003/
 // ReadAsync no longer accepts a userdefined context parameter.
 
 // ReadAsync reads samples asynchronously. Note, this function
