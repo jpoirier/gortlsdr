@@ -556,11 +556,11 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync(f ReadAsyncCbT, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync(f ReadAsyncCbT, _ *UserCtx, bufNum, bufLen int) error {
 	clientCb = f
 	i := int(C.rtlsdr_read_async((*C.rtlsdr_dev_t)(dev),
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
-		nil,
+		nil, // userctx *UserCtx
 		C.uint32_t(bufNum),
 		C.uint32_t(bufLen)))
 	return libError(i)
