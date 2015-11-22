@@ -16,7 +16,7 @@ import (
 )
 
 var sendPing = true
-var IQch chan = make(chan bool)
+var IQch = make(chan bool)
 
 // rtlsdrCb is used for asynchronous streaming. It's our
 // callback function rtl-sdr callback function.
