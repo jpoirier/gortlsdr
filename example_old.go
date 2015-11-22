@@ -16,6 +16,8 @@ import (
 )
 
 var sendPing = true
+
+//IQch async-read done signal
 var IQch = make(chan bool)
 
 // rtlsdrCb is used for asynchronous streaming. It's our

@@ -44,7 +44,7 @@ func (u *UAT) read() {
 
 // shutdown
 func (u *UAT) shutdown() {
-	fmt.Println("\n")
+	fmt.Println()
 	log.Println("\nEntered UAT shutdown() ...")
 	log.Println("UAT shutdown(): closing device ...")
 	u.dev.Close() // preempt the blocking ReadSync call
@@ -181,7 +181,7 @@ func main() {
 
 	uatDev := &UAT{}
 	if err := uatDev.sdrConfig(indexID); err != nil {
-		log.Fatal("uatDev = &UAT{indexID: id} failed: %s\n", err)
+		log.Fatalf("uatDev = &UAT{indexID: id} failed: %s\n", err.Error())
 	}
 	uatDev.wg = &sync.WaitGroup{}
 	uatDev.wg.Add(1)
