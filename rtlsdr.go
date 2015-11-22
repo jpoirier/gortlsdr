@@ -37,7 +37,7 @@ import "C"
 var PackageVersion = "v2.9.7"
 
 // ReadAsyncCbT defines a user callback function type.
-type ReadAsyncCbT func([]byte, _ *UserCtx)
+type ReadAsyncCbT func([]byte)
 
 var clientCb ReadAsyncCbT
 
