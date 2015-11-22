@@ -54,7 +54,7 @@ type Context C.rtlsdr_dev_t
 // A channel type assertion:  c, ok := (*userctx).(chan bool)
 //
 // A user context assertion:  device := (*userctx).(*rtl.Context)
-// type UserCtx interface{}
+type UserCtx interface{}
 
 // CustUserCtx allows a user to specify a unique callback function
 // and context with each call to ReadAsync2.
