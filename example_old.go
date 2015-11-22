@@ -264,7 +264,7 @@ func main() {
 	// a goroutine that waits for the async-read callback to signal it's done.
 	go asyncStop(dev, IQch)
 
-	err = dev.ReadAsync(rtlsdrCb, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	err = dev.ReadAsync(rtlsdrCb, nil, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 	if err == nil {
 		log.Printf("\tReadAsync Successful\n")
 	} else {
