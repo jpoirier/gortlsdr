@@ -67,9 +67,8 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetTunerGainMode Failed - error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tSetTunerGainMode Successful\n")
 	}
+	log.Printf("\tSetTunerGainMode Successful\n")
 
 	tgain := 480
 	err = u.dev.SetTunerGain(tgain)
@@ -77,9 +76,8 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetTunerGain Failed - error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tSetTunerGain Successful\n")
 	}
+	log.Printf("\tSetTunerGain Successful\n")
 
 	//---------- Get/Set Sample Rate ----------
 	samplerate := 2083334
@@ -88,9 +86,8 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetSampleRate Failed - error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tSetSampleRate - rate: %d\n", samplerate)
 	}
+	log.Printf("\tSetSampleRate - rate: %d\n", samplerate)
 	log.Printf("\tGetSampleRate: %d\n", u.dev.GetSampleRate())
 
 	//---------- Get/Set Xtal Freq ----------
@@ -99,9 +96,8 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tGetXtalFreq Failed - error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtlFreq, tunerFreq)
 	}
+	log.Printf("\tGetXtalFreq - Rtl: %d, Tuner: %d\n", rtlFreq, tunerFreq)
 
 	newRTLFreq := 28800000
 	newTunerFreq := 28800000
@@ -110,10 +106,9 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetXtalFreq Failed - error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tSetXtalFreq - Center freq: %d, Tuner freq: %d\n",
-			newRTLFreq, newTunerFreq)
 	}
+	log.Printf("\tSetXtalFreq - Center freq: %d, Tuner freq: %d\n",
+		newRTLFreq, newTunerFreq)
 
 	//---------- Get/Set Center Freq ----------
 	err = u.dev.SetCenterFreq(978000000)
@@ -121,9 +116,8 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetCenterFreq 978MHz Failed, error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tSetCenterFreq 978MHz Successful\n")
 	}
+	log.Printf("\tSetCenterFreq 978MHz Successful\n")
 
 	log.Printf("\tGetCenterFreq: %d\n", u.dev.GetCenterFreq())
 
@@ -134,17 +128,16 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetTunerBw %d Failed, error: %s\n", bw, err)
 		return
-	} else {
-		log.Printf("\tSetTunerBw %d Successful\n", bw)
 	}
+	log.Printf("\tSetTunerBw %d Successful\n", bw)
 
 	if err = u.dev.ResetBuffer(); err != nil {
 		u.dev.Close()
 		log.Printf("\tResetBuffer Failed - error: %s\n", err)
 		return
-	} else {
-		log.Printf("\tResetBuffer Successful\n")
 	}
+	log.Printf("\tResetBuffer Successful\n")
+
 	//---------- Get/Set Freq Correction ----------
 	freqCorr := u.dev.GetFreqCorrection()
 	log.Printf("\tGetFreqCorrection: %d\n", freqCorr)
@@ -153,9 +146,9 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 		u.dev.Close()
 		log.Printf("\tSetFreqCorrection %d Failed, error: %s\n", freqCorr, err)
 		return
-	} else {
-		log.Printf("\tSetFreqCorrection %d Successful\n", freqCorr)
 	}
+	log.Printf("\tSetFreqCorrection %d Successful\n", freqCorr)
+
 	return
 }
 
