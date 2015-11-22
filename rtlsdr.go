@@ -34,7 +34,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 import "C"
 
 // Current version.
-var PackageVersion = "v2.9.8"
+var PackageVersion = "v2.9.9"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
@@ -321,7 +321,7 @@ func (dev *Context) GetCenterFreq() (freqHz int) {
 // SetFreqCorrection sets the frequency correction.
 func (dev *Context) SetFreqCorrection(ppm int) (err error) {
 	i := int(C.rtlsdr_set_freq_correction((*C.rtlsdr_dev_t)(dev),
-		C.int(freqHz)))
+		C.int(ppm)))
 	// error code -2 means the requested PPM is the same as
 	// the current PPM (dev->corr == PPM)
 	if i == -2 {
