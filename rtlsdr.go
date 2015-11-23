@@ -34,7 +34,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 import "C"
 
 // Current version.
-var PackageVersion = "v2.9.9"
+var PackageVersion = "v2.9.10"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
@@ -292,15 +292,15 @@ func (dev *Context) ReadEeprom(data []uint8, offset uint8, leng uint16) (err err
 		C.uint8_t(offset),
 		C.uint16_t(leng)))
 	switch {
-	case i == 0:
-		return
+	default:
+		err = nil
 	case i == -1:
 		err = errors.New("device handle is invalid")
 	case i == -2:
 		err = errors.New("EEPROM size exceeded")
 	case i == -3:
 		err = errors.New("no EEPROM was found")
-	default:
+	case i < -4:
 		err = errors.New("unknown error")
 	}
 	return
