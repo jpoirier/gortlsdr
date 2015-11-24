@@ -70,7 +70,14 @@ func (u *UAT) sdrConfig(indexID int) (err error) {
 	}
 	log.Printf("\tSetTunerGainMode Successful\n")
 
-	tgain := 480
+	tgain := 0
+	gains, err := u.dev.GetTunerGains()
+	if err != nil {
+		log.Printf("\tGetTunerGains Failed - error: %s\n", err)
+	} else if len(gains) > 0 {
+		tgain = int(gains[0])
+	}
+
 	err = u.dev.SetTunerGain(tgain)
 	if err != nil {
 		u.dev.Close()

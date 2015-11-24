@@ -115,19 +115,20 @@ func main() {
 	}
 
 	//---------- Get/Set Tuner Gains ----------
+	tgain := dev.GetTunerGain()
+	log.Printf("\tGetTunerGain: %d\n", tgain)
+
 	g, err := dev.GetTunerGains()
 	if err != nil {
 		log.Printf("\tGetTunerGains Failed - error: %s\n", err)
-	} else {
+	} else if len(g) > 0 {
 		gains := fmt.Sprintf("\tGains: ")
 		for _, j := range g {
 			gains += fmt.Sprintf("%d ", j)
 		}
 		log.Printf("%s\n", gains)
+		tgain = g[0]
 	}
-
-	tgain := dev.GetTunerGain()
-	log.Printf("\tGetTunerGain: %d\n", tgain)
 
 	err = dev.SetTunerGainMode(true)
 	if err != nil {

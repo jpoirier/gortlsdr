@@ -34,7 +34,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 import "C"
 
 // Current version.
-var PackageVersion = "v2.9.11"
+var PackageVersion = "v2.9.12"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
@@ -355,9 +355,17 @@ func (dev *Context) GetTunerGains() (gainsTenthsDb []int, err error) {
 	if i <= 0 {
 		return gainsTenthsDb, libError(i)
 	}
+	buf := make([]C.int, i)
+	i = int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(dev),
+		(*C.int)(unsafe.Pointer(&buf[0]))))
+	if i <= 0 {
+		return gainsTenthsDb, libError(i)
+	}
 	gainsTenthsDb = make([]int, i)
-	C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(dev),
-		(*C.int)(unsafe.Pointer(&gainsTenthsDb[0])))
+	for ii := 0; ii < i; ii++ {
+		gainsTenthsDb[ii] = int(buf[ii])
+	}
+
 	return gainsTenthsDb, nil
 }
 
@@ -365,14 +373,10 @@ func (dev *Context) GetTunerGains() (gainsTenthsDb []int, err error) {
 // must be enabled for this to work. Valid gain values may be
 // queried using GetTunerGains.
 //
-// Valid values (in tenths of a dB) are:
-// -10, 15, 40, 65, 90, 115, 140, 165, 190, 215, 240, 290,
-// 340, 420, 430, 450, 470, 490
-//
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (dev *Context) SetTunerGain(gainsTenthsDb int) (err error) {
+func (dev *Context) SetTunerGain(gainTenthsDb int) (err error) {
 	i := int(C.rtlsdr_set_tuner_gain((*C.rtlsdr_dev_t)(dev),
-		C.int(gainsTenthsDb)))
+		C.int(gainTenthsDb)))
 	return libError(i)
 }
 
