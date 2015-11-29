@@ -17,11 +17,16 @@ import (
 //     $ sudo rmmod dvb_usb_rtl28xxu rtl2832
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
-
+#ifdef MOC_TEST
+// gcc -fPIC -shared -o librtlsdr_moc.so librtlsdr_moc.c
+// CC="gcc -DMOCK_TEST"  go build -o gortlsdr.a rtlsdr.go exports.go
+#cgo linux LDFLAGS: -L. -lrtlsdr_moc
+#else
 #cgo linux LDFLAGS: -lrtlsdr
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
+#endif
 
 #include <stdlib.h>
 #include <rtl-sdr.h>
@@ -98,11 +103,15 @@ const (
 	DefaultBufLength      = (16 * 16384)
 	MinimalBufLength      = 512
 	MaximalBufLength      = (256 * 16384)
+	EINVAL                = -22
+	LIBUSB_ERROR_OTHER    = -99
 )
 
 // Note, librtlsdr's SetFreqCorrection returns an error value of
 // -2 when the current ppm is the same as the requested ppm, but
-// gortlsdr replaces the -2 with nil.
+// gortlsdr replaces the -2 with nil. Also, most of librtlsdr's
+// functions return 0 on succes and -1 when dev is invalid but
+// some return 0 when dev is invalid, go figure.
 const (
 	libSuccess = iota * -1
 	libErrorIo
@@ -117,7 +126,8 @@ const (
 	libErrorInterrupted
 	libErrorNoMem
 	libErrorNotSupported
-	libErrorOther = -99
+	linErrorInvalidParameter = EINVAL
+	libErrorOther            = LIBUSB_ERROR_OTHER
 )
 
 // Sampling modes.
@@ -142,6 +152,7 @@ var libErrMap = map[int]error{
 	libErrorInterrupted:  errors.New("system call interrupted (perhaps due to signal)"),
 	libErrorNoMem:        errors.New("insufficient memory"),
 	libErrorNotSupported: errors.New("operation not supported or unimplemented on this platform"),
+	libErrorOther:        errors.New("invalid parameter"),
 	libErrorOther:        errors.New("unknown error"),
 }
 
@@ -391,7 +402,7 @@ func (dev *Context) SetTunerBw(bwHz int) (err error) {
 // GetTunerBw returns the device bandwidth setting,
 // zero means automatic bandwidth.
 // func (dev *Context) GetTunerBw(bwHz int) {
-// 	return int(C.rtlsdr_set_tuner_bandwidth((*C.rtlsdr_dev_t)(dev)))
+// 	return int(C.rtlsdr_get_tuner_bandwidth((*C.rtlsdr_dev_t)(dev)))
 // }
 
 // GetTunerGain returns the tuner gain.
