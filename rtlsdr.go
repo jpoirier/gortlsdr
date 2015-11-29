@@ -126,8 +126,8 @@ const (
 	libErrorInterrupted
 	libErrorNoMem
 	libErrorNotSupported
-	linErrorInvalidParameter = EINVAL
-	libErrorOther            = LIBUSB_ERROR_OTHER
+	linErrorInvalidParam = EINVAL
+	libErrorOther        = LIBUSB_ERROR_OTHER
 )
 
 // Sampling modes.
@@ -152,7 +152,7 @@ var libErrMap = map[int]error{
 	libErrorInterrupted:  errors.New("system call interrupted (perhaps due to signal)"),
 	libErrorNoMem:        errors.New("insufficient memory"),
 	libErrorNotSupported: errors.New("operation not supported or unimplemented on this platform"),
-	libErrorOther:        errors.New("invalid parameter"),
+	linErrorInvalidParam: errors.New("invalid parameter"),
 	libErrorOther:        errors.New("unknown error"),
 }
 
