@@ -17,16 +17,16 @@ import (
 //     $ sudo rmmod dvb_usb_rtl28xxu rtl2832
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
-#ifdef MOC_TEST
+//#ifdef MOC_TEST
 // gcc -fPIC -shared -o librtlsdr_moc.so librtlsdr_moc.c
 // CC="gcc -DMOCK_TEST"  go build -o gortlsdr.a rtlsdr.go exports.go
-#cgo linux LDFLAGS: -L. -lrtlsdr_moc
-#else
+//#cgo linux LDFLAGS: -L. -lrtlsdr_moc
+//#else
 #cgo linux LDFLAGS: -lrtlsdr
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
-#endif
+//#endif
 
 #include <stdlib.h>
 #include <rtl-sdr.h>
