@@ -103,7 +103,6 @@ const (
 	DefaultBufLength      = (16 * 16384)
 	MinimalBufLength      = 512
 	MaximalBufLength      = (256 * 16384)
-	EINVAL                = -22
 	LIBUSB_ERROR_OTHER    = -99
 )
 
@@ -360,7 +359,7 @@ func (dev *Context) GetTunerType() (tunerType string) {
 // GetTunerGains returns a list of supported tuner gains.
 // Values are in tenths of dB, e.g. 115 means 11.5 dB.
 func (dev *Context) GetTunerGains() (gainsTenthsDb []int, err error) {
-	//	count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
+	// count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
 	i := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(dev),
 		(*C.int)(unsafe.Pointer(nil))))
 	if i <= 0 {
