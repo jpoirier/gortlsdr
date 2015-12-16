@@ -18,21 +18,23 @@ import (
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
 //
-#ifdef MOC_TEST
-// to build:
+// to build the moc test:
 // $ gcc -Wall -c librtlsdr_moc.c -o librtlsdr_moc.o
 // $ ar rcs librtlsdr_moc.a librtlsdr_moc.o
-// $ CC="gcc -DMOCK_TEST" go build --ldflags '-extldflags "-static"' -o gortlsdr_moc.a ../rtlsdr.go ../exports.go
+// $ CC="gcc -DMOCK_TEST" go build -tags 'MOC_TEST' --ldflags '-extldflags "-static"' -o gortlsdr_moc.a ../rtlsdr.go ../exports.go
 //
-#cgo LDFLAGS: -L./moc_test -lrtlsdr_moc
-#include <stdlib.h>
-#include <rtl-sdr_moc.h>
-#else
+
+#cgo MOC_TEST LDFLAGS: -L./moc_test -lrtlsdr_moc
+
 #cgo linux LDFLAGS: -lrtlsdr
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
+
 #include <stdlib.h>
+#ifdef MOC_TEST
+#include <rtl-sdr_moc.h>
+#else
 #include <rtl-sdr.h>
 #endif
 
