@@ -17,19 +17,24 @@ import (
 //     $ sudo rmmod dvb_usb_rtl28xxu rtl2832
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
-//#ifdef MOC_TEST
-// gcc -fPIC -shared -o librtlsdr_moc.so librtlsdr_moc.c
-// CC="gcc -DMOCK_TEST"  go build -o gortlsdr.a rtlsdr.go exports.go
-//#cgo linux LDFLAGS: -L. -lrtlsdr_moc
-//#else
+//
+#ifdef MOC_TEST
+// to build:
+// $ gcc -Wall -c librtlsdr_moc.c -o librtlsdr_moc.o
+// $ ar rcs librtlsdr_moc.a librtlsdr_moc.o
+// $ CC="gcc -DMOCK_TEST" go build --ldflags '-extldflags "-static"' -o gortlsdr_moc.a ../rtlsdr.go ../exports.go
+//
+#cgo LDFLAGS: -L./moc_test -lrtlsdr_moc
+#include <stdlib.h>
+#include <rtl-sdr_moc.h>
+#else
 #cgo linux LDFLAGS: -lrtlsdr
 #cgo darwin LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
-//#endif
-
 #include <stdlib.h>
 #include <rtl-sdr.h>
+#endif
 
 extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
 static inline rtlsdr_read_async_cb_t get_go_cb() {
@@ -618,14 +623,13 @@ func (dev *Context) SetHwInfo(info HwInfo) (err error) {
 	data[3] = uint8(info.VendorID >> 8)
 	data[4] = uint8(info.ProductID)
 	data[5] = uint8(info.ProductID >> 8)
+
 	if info.HaveSerial == true {
 		data[6] = 0xA5
 	}
-
 	if info.RemoteWakeup == true {
 		data[7] = data[7] | 0x01
 	}
-
 	if info.EnableIR == true {
 		data[7] = data[7] | 0x02
 	}
