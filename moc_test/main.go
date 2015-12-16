@@ -93,7 +93,7 @@ func SetFreqCorrection(d *rtl.Context, i int) {
 }
 
 func GetFreqCorrection(d *rtl.Context, i int) {
-	if ppm := d.GetFreqCorrection(); ppm != -1 {
+	if ppm := d.GetFreqCorrection(); ppm < 0 {
 		log.Printf("--- FAILED, GetFreqCorrection i:%d - %d\n", i, ppm)
 	} else {
 		log.Printf("--- PASSED, GetFreqCorrection i:%d\n", i)
@@ -168,7 +168,7 @@ func SetTunerGainMode(d *rtl.Context, i int) {
 }
 
 func SetSampleRate(d *rtl.Context, i int) {
-	rateHz := 3500000
+	rateHz := 225001
 	if err := d.SetSampleRate(rateHz); err != nil {
 		log.Printf("--- FAILED, SetSampleRate i:%d - %s\n", i, err)
 	} else {
@@ -272,17 +272,17 @@ func main() {
 
 	for i := 0; i < cnt; i++ {
 		if len(GetDeviceName(i)) == 0 {
-			log.Printf("--- FAILED, GetDeviceName i:%d\n")
+			log.Printf("--- FAILED, GetDeviceName i:%d\n", i)
 		} else {
-			log.Printf("--- PASSED, GetDeviceName i:%d\n")
+			log.Printf("--- PASSED, GetDeviceName i:%d\n", i)
 		}
 	}
 
 	for i := 3; i < 6; i++ {
 		if len(GetDeviceName(i)) != 0 {
-			log.Printf("--- FAILED, GetDeviceName i:%d\n")
+			log.Printf("--- FAILED, GetDeviceName i:%d\n", i)
 		} else {
-			log.Printf("--- PASSED, GetDeviceName i:%d\n")
+			log.Printf("--- PASSED, GetDeviceName i:%d\n", i)
 		}
 	}
 
@@ -292,7 +292,7 @@ func main() {
 			log.Printf("--- FAILED, GetDeviceUsbStrings i:%d, %s\n", i, err)
 		} else {
 			serials = append(serials, s)
-			log.Printf("--- PASSED, GetDeviceUsbStrings i:%d\n")
+			log.Printf("--- PASSED, GetDeviceUsbStrings i:%d\n", i)
 		}
 	}
 
@@ -300,7 +300,7 @@ func main() {
 		if _, _, _, err := GetDeviceUsbStrings(i); err == nil {
 			log.Printf("--- FAILED, GetDeviceUsbStrings i:%d, %s\n", i, err)
 		} else {
-			log.Printf("--- PASSED, GetDeviceUsbStrings i:%d\n")
+			log.Printf("--- PASSED, GetDeviceUsbStrings i:%d\n", i)
 		}
 	}
 

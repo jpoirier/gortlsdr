@@ -116,7 +116,7 @@ void do_init(void) {
 		.test_mode = 0,
 		.agc_mode = 0,
 		.direct_sampling_mode = 1,
-		.offset_tuning =1000,
+		.offset_tuning = 1,
 		.type = RTLSDR_TUNER_R828D,
 		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
 		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
@@ -141,7 +141,7 @@ void do_init(void) {
 		.test_mode = 1,
 		.agc_mode = 1,
 		.direct_sampling_mode = 0,
-		.offset_tuning =1001,
+		.offset_tuning = 0,
 		.type = RTLSDR_TUNER_R820T,
 		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
 		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
@@ -166,7 +166,7 @@ void do_init(void) {
 		.test_mode = 0,
 		.agc_mode = 1,
 		.direct_sampling_mode = 1,
-		.offset_tuning =1002,
+		.offset_tuning = 1,
 		.type = RTLSDR_TUNER_E4000,
 		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
 		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
@@ -424,10 +424,8 @@ int rtlsdr_get_direct_sampling(rtlsdr_dev_t *dev){
 }
 
 int rtlsdr_set_offset_tuning(rtlsdr_dev_t *dev, int on) {
-	if (!dev)
+	if (!dev || !dev_valid(dev))
 		return -1;
-	if (!dev_valid(dev))
-		return -2;
 
 	dev->offset_tuning = on;
 	return 0;
