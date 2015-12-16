@@ -17,14 +17,8 @@ import (
 //     $ sudo rmmod dvb_usb_rtl28xxu rtl2832
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
-//
-// to build the moc test:
-// $ gcc -Wall -c librtlsdr_moc.c -o librtlsdr_moc.o
-// $ ar rcs librtlsdr_moc.a librtlsdr_moc.o
-// $ CC="gcc -DMOCK_TEST" go build -tags 'MOC_TEST' --ldflags '-extldflags "-static"' -o gortlsdr_moc.a ../rtlsdr.go ../exports.go
-//
 
-#cgo MOC_TEST LDFLAGS: -L./moc_test -lrtlsdr_moc
+#cgo MOC_TEST LDFLAGS: -L. -lrtlsdr_moc
 
 #cgo linux LDFLAGS: -lrtlsdr
 #cgo darwin LDFLAGS: -lrtlsdr
