@@ -1,17 +1,18 @@
 #
 
-
 all:
-	cd gortlsdr_moc && gcc -Wall -c librtlsdr_moc.c -o librtlsdr_moc.o
-	cd gortlsdr_moc && ar rcs librtlsdr_moc.a librtlsdr_moc.o
-	cd gortlsdr_moc && cp ../../rtlsdr.go .
-	cd gortlsdr_moc && cp ../../exports.go .
-	cd gortlsdr_moc && CC="gcc -DMOCK_TEST" go build -tags 'MOC_TEST' --ldflags '-extldflags "-static"' -o gortlsdr_moc.a rtlsdr.go exports.go
-	go build main_moc.go
-	cd gortlsdr_moc &&  rm ./rtlsdr.go ./exports.go
+	# cd gortlsdr && gcc -fPIC -shared -Wl,-soname,librtlsdr.so.0 -o librtlsdr.so.0 librtlsdr.c
+	cd gortlsdr && gcc -Wall -c librtlsdr.c -o librtlsdr.o
+	cd gortlsdr && ar rcs librtlsdr.a librtlsdr.o
+	cd gortlsdr && cp ../../rtlsdr.go .
+	cd gortlsdr && cp ../../exports.go .
+	cd gortlsdr && CC="gcc -DMOCK_TEST" go build --ldflags '-extldflags "-static" "-L."' -o gortlsdr.a rtlsdr.go exports.go
+	# cd gortlsdr && CC="gcc -Dmock" go build -o gortlsdr.a rtlsdr.go exports.go
+	go build --ldflags '-extldflags "-L./gortlsdr"' main.go
+	rm ./gortlsdr/rtlsdr.go ./gortlsdr/exports.go
 
 clean:
-	rm -f main_moc ./gortlsdr_moc/*.o ./gortlsdr_moc/*.a ./gortlsdr_moc/rtlsdr.go ./gortlsdr_moc/exports.go
+	rm -f main ./gortlsdr/*.o ./gortlsdr/*.a ./gortlsdr/rtlsdr.go ./gortlsdr/exports.go ./gortlsdr/*.0 ./gortlsdr/*.so
 
 
 

@@ -18,16 +18,13 @@ import (
 // If building libusb from source, to regenerate the configure file use:
 //     $ autoreconf -fvi
 
-#cgo MOC_TEST LDFLAGS: -L. -lrtlsdr_moc
-
-#cgo linux LDFLAGS: -lrtlsdr
-#cgo darwin LDFLAGS: -lrtlsdr
+#cgo !windows LDFLAGS: -lrtlsdr
 #cgo windows CFLAGS: -IC:/WINDOWS/system32
 #cgo windows LDFLAGS: -lrtlsdr -LC:/WINDOWS/system32
 
 #include <stdlib.h>
-#ifdef MOC_TEST
-#include <rtl-sdr_moc.h>
+#ifdef mock
+#include "rtl-sdr_moc.h"
 #else
 #include <rtl-sdr.h>
 #endif

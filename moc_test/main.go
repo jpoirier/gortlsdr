@@ -9,7 +9,7 @@ package main
 import (
 	"log"
 
-	rtl "./gortlsdr_moc"
+	rtl "./gortlsdr"
 )
 
 func GetDeviceCount() int {
