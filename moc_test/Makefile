@@ -6,8 +6,7 @@ all:
 	cd gortlsdr && ar rcs librtlsdr.a librtlsdr.o
 	cd gortlsdr && cp ../../rtlsdr.go .
 	cd gortlsdr && cp ../../exports.go .
-	cd gortlsdr && CC="gcc -DMOCK_TEST" go build --ldflags '-extldflags "-static" "-L."' -o gortlsdr.a rtlsdr.go exports.go
-	# cd gortlsdr && CC="gcc -Dmock" go build -o gortlsdr.a rtlsdr.go exports.go
+	cd gortlsdr && CC="gcc -Dmock" go build -o gortlsdr.a rtlsdr.go exports.go
 	go build --ldflags '-extldflags "-L./gortlsdr"' main.go
 	rm ./gortlsdr/rtlsdr.go ./gortlsdr/exports.go
 
