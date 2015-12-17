@@ -76,9 +76,16 @@ func GetUsbStrings(d *rtl.Context, i int) {
 // 	d.WriteEeprom(data, offset, leng)
 // }
 
-// func ReadEeprom(d *rtl.Context, i int) {
-// 	d.ReadEeprom(data, offset, leng)
-// }
+func ReadEeprom(d *rtl.Context, i int) {
+	data := make([]byte, 72, 256)
+	if err := d.ReadEeprom(data, 9, 72); err != nil {
+		failed++
+		log.Printf("--- FAILED, ReadEeprom i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, ReadEeprom i:%d\n", i)
+	}
+}
 
 func SetCenterFreq(d *rtl.Context, i int) {
 	freqHz := 2500100
@@ -288,13 +295,26 @@ func GetOffsetTuning(d *rtl.Context, i int) {
 	}
 }
 
-// func ResetBuffer(d *rtl.Context, i int) {
-// 	d.ResetBuffer()
-// }
+func ResetBuffer(d *rtl.Context, i int) {
+	if err := d.ResetBuffer(); err != nil {
+		failed++
+		log.Printf("--- FAILED, ResetBuffer i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, ResetBuffer i:%d\n", i)
+	}
+}
 
-// func ReadSync(d *rtl.Context, i int) {
-
-// }
+func ReadSync(d *rtl.Context, i int) {
+	b := make([]byte, 256)
+	if _, err := d.ReadSync(b, 256); err != nil {
+		failed++
+		log.Printf("--- FAILED, ReadSync i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, ReadSync i:%d\n", i)
+	}
+}
 
 // func ReadAsync(d *rtl.Context, i int) {
 
@@ -415,7 +435,7 @@ func main() {
 
 		GetUsbStrings(d, i)
 
-		// ReadEeprom(d, i)
+		ReadEeprom(d, i)
 		// WriteEeprom(d, i)
 
 		GetCenterFreq(d, i)
@@ -449,12 +469,12 @@ func main() {
 		GetOffsetTuning(d, i)
 		SetOffsetTuning(d, i)
 
-		// ResetBuffer(d, i)
+		ResetBuffer(d, i)
 
 		// GetHwInfo(d, i)
 		// SetHwInfo(d, i)
 
-		// ReadSync(d, i)
+		ReadSync(d, i)
 		// ReadAsync(d, i)
 
 		// CancelAsync(d, i)
