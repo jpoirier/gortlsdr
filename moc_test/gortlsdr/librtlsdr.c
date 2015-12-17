@@ -18,6 +18,7 @@
 #include "rtl-sdr_moc.h"
 
 #define DEBVICE_CNT (3)
+#define DEVICE_GAIN_CNT (29)
 
 // struct rtlsdr_dev {
 // 	libusb_context *ctx;
@@ -70,22 +71,25 @@ struct rtlsdr_dev {
 	int offset_tuning;
 	enum rtlsdr_tuner type;
 	char eeprom_buffer[256];
-	int gains[29];
+	char manufact[37]; 	// fat pointer
+	char product[37]; 	// fat pointer
+	char serial[37];	// fat pointer
+	int gains[DEVICE_GAIN_CNT];
 };
 
 /*
    0  |  1   | 2(L) 3(U) | 4(L)  5(U) |   6 (0xA5)  |   7 (|0x01)   | 7 (|0x02) |
  0x28 | 0x32 | Vendor ID | Product ID | Have Serial | Remote Wakeup | Enable IR |
 
-string start offset index is 9 and it indicates the string size in bytes
-max string length is: 35 * 2 + 2 header bytes = 72 bytes
-header byte [0] = total string length <= 72 (info string length <= 72 - 2 header bytes)
-header byte [1] = 0x03
-Manufact info string start [3], info string end [header byte [0] - 2]
-Product info string start [], info string end [header byte [] - 2]
-Serial info string start [], info string end [header byte [] - 2]
+string start offset index is 9 and indicates the string size in bytes
+max string length is 35 * 2 + 2 header bytes = 72 bytes
+header byte [0] is the total string length <= 72 (info string length <= 72 - 2 header bytes)
+header byte [1] is 0x03
+Manufact info string start is [3], info string end is [header byte [0] - 2]
+Product info string start [], info string end is [header byte [] - 2]
+Serial info string start [], info string end is [header byte [] - 2]
 
-string are written as "char, 0x00" pairs
+strings are written as "["char", 0x00]" pairs
 */
 
 static int device_count = DEBVICE_CNT;
@@ -102,6 +106,12 @@ void do_init(void) {
 	if (is_initialized)
 		return;
 
+	s0.manufact[0] = 7;
+	strcpy(&(s0.manufact[1]), "REALTEK\0");
+	s0.product[0] = 7;
+	strcpy(&(s0.product[1]), "NOOELEC\0") ;
+	s0.serial[0] = 4;
+	strcpy(&(s0.serial[1]), "1991\0");
 	s0 = (struct rtlsdr_dev){
 		.status = false,
 		.ppm = 50,
@@ -127,6 +137,13 @@ void do_init(void) {
 				     338, 364, 372, 386, 402, 421, 434, 439,
 				     445, 480, 496}
 	};
+
+	s1.manufact[0] = 7;
+	strcpy(&(s0.manufact[1]), "REALTEK\0");
+	s1.product[0] = 7;
+	strcpy(&(s0.product[1]), "NOOELEC\0") ;
+	s1.serial[0] = 4;
+	strcpy(&(s0.serial[1]), "2992\0");
 	s1 = (struct rtlsdr_dev){
 		.status = false,
 		.ppm = 51,
@@ -152,6 +169,13 @@ void do_init(void) {
 				     338, 364, 372, 386, 402, 421, 434, 439,
 				     445, 480, 496}
 	};
+
+	s2.manufact[0] = 7;
+	strcpy(&(s0.manufact[1]), "REALTEK\0");
+	s2.product[0] = 7;
+	strcpy(&(s0.product[1]), "NOOELEC\0") ;
+	s2.serial[0] = 4;
+	strcpy(&(s0.serial[1]), "3993\0");
 	s2 = (struct rtlsdr_dev){
 		.status = false,
 		.ppm = 52,
@@ -171,7 +195,7 @@ void do_init(void) {
 		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
 		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
 		0x1F, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
-		0x0A, 0x03, '1', 0x00, '9', 0x00, '9', 0x00, '1', 0x00},
+		0x0A, 0x03, '3', 0x00, '9', 0x00, '9', 0x00, '3', 0x00},
 		.gains = { 0, 9, 14, 27, 37, 77, 87, 125, 144, 157,
 				     166, 197, 207, 229, 254, 280, 297, 328,
 				     338, 364, 372, 386, 402, 421, 434, 439,
@@ -219,16 +243,28 @@ int rtlsdr_get_xtal_freq(rtlsdr_dev_t *dev, uint32_t *rtl_freq, uint32_t *tuner_
 	return 0;
 }
 
-// TODO:
 int rtlsdr_get_usb_strings(rtlsdr_dev_t *dev, char *manufact, char *product, char *serial) {
 	if (!dev)
 		return -1;
 	if (!dev_valid(dev))
 		return -2;
 
-	// strcpy(manufact, "Manufacturer");
-	// strcpy(product, "Product");
-	// strcpy(serial, "Serial");
+	if (dev == &s0) {
+		memcpy(manufact, &s0.manufact[1], s0.manufact[0]);
+		memcpy(product, &s0.product[1], s0.product[0]);
+		memcpy(serial, &s0.serial[1], s0.serial[0]);
+	} else if (dev == &s1) {
+		memcpy(manufact, &s1.manufact[1], s1.manufact[0]);
+		memcpy(product, &s1.product[1], s1.product[0]);
+		memcpy(serial, &s1.serial[1], s1.serial[0]);
+	} else if (dev == &s1) {
+		memcpy(manufact, &s2.manufact[1], s2.manufact[0]);
+		memcpy(product, &s2.product[1], s2.product[0]);
+		memcpy(serial, &s2.serial[1], s2.serial[0]);
+	} else {
+		return -3;
+	}
+
 	return 0;
 }
 
@@ -307,7 +343,7 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains) {
 		return -2;
 
 	gains = &(dev->gains[0]);
-	return (29 / sizeof(int));
+	return (DEVICE_GAIN_CNT / sizeof(int));
 }
 
 int rtlsdr_set_tuner_bandwidth(rtlsdr_dev_t *dev, uint32_t bw) {
@@ -444,32 +480,51 @@ uint32_t rtlsdr_get_device_count(void) {
 	return device_count;
 }
 
-// TODO:
 const char *rtlsdr_get_device_name(uint32_t index) {
 	do_init();
-	return 0;
+	if (index < 0 || index > 2)
+		return "";
+
+	return "Generic RTL2832U OEM";
 }
 
-// TODO:
 int rtlsdr_get_device_usb_strings(uint32_t index, char *manufact, char *product, char *serial) {
 	do_init();
-	// strcpy(manufact, "Manufacturer");
-	// strcpy(manufact, "Product");
-	// strcpy(manufact, "Serial");
+
+	if (index == 0) {
+		memcpy(manufact, &s0.manufact[1], s0.manufact[0]);
+		memcpy(product, &s0.product[1], s0.product[0]);
+		memcpy(serial, &s0.serial[1], s0.serial[0]);
+	} else if (index == 1) {
+		memcpy(manufact, &s1.manufact[1], s1.manufact[0]);
+		memcpy(product, &s1.product[1], s1.product[0]);
+		memcpy(serial, &s1.serial[1], s1.serial[0]);
+	} else if (index == 2) {
+		memcpy(manufact, &s2.manufact[1], s2.manufact[0]);
+		memcpy(product, &s2.product[1], s2.product[0]);
+		memcpy(serial, &s2.serial[1], s2.serial[0]);
+	} else {
+		return -1;
+	}
+
 	return 0;
 }
 
-// TODO:
 int rtlsdr_get_index_by_serial(const char *serial) {
 	do_init();
 
 	if (!serial)
 		return -1;
 
-	// if (!strcmp(serial, ))
-	// 	return 0;
+	if (!strcmp(serial, &(s0.serial[1]))) {
+		return 0;
+	} else if (!strcmp(serial, &(s1.serial[1]))) {
+		return 1;
+	} else if (!strcmp(serial, &(s1.serial[1]))) {
+		return 2;
+	}
 
-	return -3;
+	return -2;
 }
 
 int rtlsdr_open(rtlsdr_dev_t **out_dev, uint32_t index) {

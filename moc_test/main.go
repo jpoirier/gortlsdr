@@ -62,9 +62,15 @@ func GetXtalFreq(d *rtl.Context, i int) {
 	}
 }
 
-// func GetUsbStrings(d *rtl.Context, i int) {
-// 	d.GetUsbStrings()
-// }
+func GetUsbStrings(d *rtl.Context, i int) {
+	if _, _, _, err := d.GetUsbStrings(); err != nil {
+		failed++
+		log.Printf("--- FAILED, GetUsbStrings i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, GetUsbStrings i:%d\n", i)
+	}
+}
 
 // func WriteEeprom(d *rtl.Context, i int) {
 // 	d.WriteEeprom(data, offset, leng)
@@ -407,7 +413,7 @@ func main() {
 		GetXtalFreq(d, i)
 		SetXtalFreq(d, i)
 
-		// GetUsbStrings(d, i)
+		GetUsbStrings(d, i)
 
 		// ReadEeprom(d, i)
 		// WriteEeprom(d, i)
