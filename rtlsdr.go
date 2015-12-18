@@ -80,8 +80,8 @@ type HwInfo struct {
 
 const (
 	EepromSize = 256
-	// MaxStrSize = (max string length - 2 (header bytes)) \ 2. Where each
-	// info character is followed by a null char.
+	// MaxStrSize = (max string length - 2 (header bytes)) \ 2,
+	// where each info char is followed by a null char.
 	MaxStrSize     = 35
 	StrOffsetStart = 0x09
 )
