@@ -9,7 +9,7 @@ all:
 	cd gortlsdr && CC="gcc -Dmock" go build -o gortlsdr.a rtlsdr.go exports.go
 	go build --ldflags '-extldflags "-L./gortlsdr"' main.go
 	rm ./gortlsdr/rtlsdr.go ./gortlsdr/exports.go
-
+	./main
 clean:
 	rm -f main ./gortlsdr/*.o ./gortlsdr/*.a ./gortlsdr/rtlsdr.go ./gortlsdr/exports.go ./gortlsdr/*.0 ./gortlsdr/*.so
 

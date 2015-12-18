@@ -22,6 +22,8 @@
 #define EEPROM_SIZE (256)
 #define DEFAULT_BUF_NUMBER	(15)
 #define DEFAULT_BUF_LENGTH	(16 * 32 * 512)
+#define STRINGS_OFFSET_START (9)
+#define MAX_RAW_STR_SZ (2*35+2)
 
 // struct rtlsdr_dev {
 // 	libusb_context *ctx;
@@ -74,9 +76,6 @@ struct rtlsdr_dev {
 	int offset_tuning;
 	enum rtlsdr_tuner type;
 	char eeprom_buffer[256];
-	char manufact[37]; 	// fat pointer
-	char product[37]; 	// fat pointer
-	char serial[37];	// fat pointer
 	int gains[DEVICE_GAIN_CNT];
 	char xbuf[DEFAULT_BUF_LENGTH];
 };
@@ -110,12 +109,6 @@ void do_init(void) {
 	if (is_initialized)
 		return;
 
-	s0.manufact[0] = 7;
-	strcpy(&(s0.manufact[1]), "REALTEK\0");
-	s0.product[0] = 7;
-	strcpy(&(s0.product[1]), "NOOELEC\0") ;
-	s0.serial[0] = 4;
-	strcpy(&(s0.serial[1]), "1991\0");
 	s0 = (struct rtlsdr_dev){
 		.status = false,
 		.ppm = 50,
@@ -132,9 +125,9 @@ void do_init(void) {
 		.direct_sampling_mode = 1,
 		.offset_tuning = 1,
 		.type = RTLSDR_TUNER_R828D,
-		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
-		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
-		0x1F, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
+		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03, 0x00,
+		0x10, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
+		0x10, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
 		0x0A, 0x03, '1', 0x00, '9', 0x00, '9', 0x00, '1', 0x00},
 		.gains = { 0, 9, 14, 27, 37, 77, 87, 125, 144, 157,
 				     166, 197, 207, 229, 254, 280, 297, 328,
@@ -142,12 +135,6 @@ void do_init(void) {
 				     445, 480, 496}
 	};
 
-	s1.manufact[0] = 7;
-	strcpy(&(s0.manufact[1]), "REALTEK\0");
-	s1.product[0] = 7;
-	strcpy(&(s0.product[1]), "NOOELEC\0") ;
-	s1.serial[0] = 4;
-	strcpy(&(s0.serial[1]), "2992\0");
 	s1 = (struct rtlsdr_dev){
 		.status = false,
 		.ppm = 51,
@@ -164,9 +151,9 @@ void do_init(void) {
 		.direct_sampling_mode = 0,
 		.offset_tuning = 0,
 		.type = RTLSDR_TUNER_R820T,
-		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
-		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
-		0x1F, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
+		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03, 0x00,
+		0x10, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
+		0x10, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
 		0x0A, 0x03, '2', 0x00, '9', 0x00, '9', 0x00, '2', 0x00},
 		.gains = { 0, 9, 14, 27, 37, 77, 87, 125, 144, 157,
 				     166, 197, 207, 229, 254, 280, 297, 328,
@@ -174,12 +161,6 @@ void do_init(void) {
 				     445, 480, 496}
 	};
 
-	s2.manufact[0] = 7;
-	strcpy(&(s0.manufact[1]), "REALTEK\0");
-	s2.product[0] = 7;
-	strcpy(&(s0.product[1]), "NOOELEC\0") ;
-	s2.serial[0] = 4;
-	strcpy(&(s0.serial[1]), "3993\0");
 	s2 = (struct rtlsdr_dev){
 		.status = false,
 		.ppm = 52,
@@ -196,9 +177,9 @@ void do_init(void) {
 		.direct_sampling_mode = 1,
 		.offset_tuning = 1,
 		.type = RTLSDR_TUNER_E4000,
-		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03,
-		0x1F, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
-		0x1F, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
+		.eeprom_buffer = {0x28, 0x32, 0x09, 0x01, 0x01, 0x01, 0xA5, 0x03, 0x00,
+		0x10, 0x03, 'R', 0x00, 'E', 0x00, 'A', 0x00, 'L', 0x00, 'T', 0x00, 'E', 0x00, 'K', 0x00,
+		0x10, 0x03, 'N', 0x00, 'O', 0x00, 'O', 0x00, 'E', 0x00, 'L', 0x00, 'E', 0x00, 'C', 0x00,
 		0x0A, 0x03, '3', 0x00, '9', 0x00, '9', 0x00, '3', 0x00},
 		.gains = { 0, 9, 14, 27, 37, 77, 87, 125, 144, 157,
 				     166, 197, 207, 229, 254, 280, 297, 328,
@@ -245,36 +226,59 @@ int rtlsdr_get_usb_strings(rtlsdr_dev_t *dev, char *manufact, char *product, cha
 	if (!dev || !dev_valid(dev))
 		return -1;
 
+	char *p;
 	if (dev == &s0) {
-		memcpy(manufact, &s0.manufact[1], s0.manufact[0]);
-		memcpy(product, &s0.product[1], s0.product[0]);
-		memcpy(serial, &s0.serial[1], s0.serial[0]);
+		p = &(s0.eeprom_buffer[STRINGS_OFFSET_START]);
 	} else if (dev == &s1) {
-		memcpy(manufact, &s1.manufact[1], s1.manufact[0]);
-		memcpy(product, &s1.product[1], s1.product[0]);
-		memcpy(serial, &s1.serial[1], s1.serial[0]);
-	} else if (dev == &s1) {
-		memcpy(manufact, &s2.manufact[1], s2.manufact[0]);
-		memcpy(product, &s2.product[1], s2.product[0]);
-		memcpy(serial, &s2.serial[1], s2.serial[0]);
+		p = &(s1.eeprom_buffer[STRINGS_OFFSET_START]);
+	} else if (dev == &s2) {
+		p = &(s2.eeprom_buffer[STRINGS_OFFSET_START]);
 	} else {
-		return -3;
+		return -2;
+	}
+
+	int i, j, sz;
+
+	sz = p[0];
+	if (manufact) {
+		for (i = 0, j = 0; j < (sz-2); i++, j+=2) {
+			manufact[i] = p[2+j];
+		}
+		manufact[i] = '\0';
+	}
+
+	p += sz;
+	sz = p[0];
+	if (product) {
+		for (i = 0, j = 0; j < (sz-2); i++, j+=2) {
+			product[i] = p[2+j];
+		}
+		product[i] = '\0';
+	}
+
+	p += sz;
+	sz = p[0];
+	if (serial) {
+		for (i = 0, j = 0; j < (sz-2); i++, j+=2) {
+			serial[i] = p[2+j];
+		}
+		serial[i] = '\0';
+
 	}
 
 	return 0;
 }
 
-// TODO:
 int rtlsdr_write_eeprom(rtlsdr_dev_t *dev, uint8_t *data, uint8_t offset, uint16_t len) {
 	if (!dev || !dev_valid(dev))
 		return -1;
 
-	if ((len + offset) > EEPROM_SIZE)
+	if (len > (EEPROM_SIZE-offset))
 		return -2;
 
-	// int i;
-	// for (i = 0; i < len; i++)
-	// 	eeprom_buffer[i+offset] = data[i];
+	if (memcpy(&(dev->eeprom_buffer[offset]), data, len) == 0)
+		return -3;
+
 	return 0;
 }
 
@@ -282,7 +286,7 @@ int rtlsdr_read_eeprom(rtlsdr_dev_t *dev, uint8_t *data, uint8_t offset, uint16_
 	if (!dev || !dev_valid(dev))
 		return -1;
 
-	if ((len + offset) > EEPROM_SIZE)
+	if (len > (EEPROM_SIZE-offset))
 		return -2;
 
 	char *p;
@@ -461,23 +465,18 @@ const char *rtlsdr_get_device_name(uint32_t index) {
 int rtlsdr_get_device_usb_strings(uint32_t index, char *manufact, char *product, char *serial) {
 	do_init();
 
+	rtlsdr_dev_t *dev;
 	if (index == 0) {
-		memcpy(manufact, &s0.manufact[1], s0.manufact[0]);
-		memcpy(product, &s0.product[1], s0.product[0]);
-		memcpy(serial, &s0.serial[1], s0.serial[0]);
+		dev = &s0;
 	} else if (index == 1) {
-		memcpy(manufact, &s1.manufact[1], s1.manufact[0]);
-		memcpy(product, &s1.product[1], s1.product[0]);
-		memcpy(serial, &s1.serial[1], s1.serial[0]);
+		dev = &s1;
 	} else if (index == 2) {
-		memcpy(manufact, &s2.manufact[1], s2.manufact[0]);
-		memcpy(product, &s2.product[1], s2.product[0]);
-		memcpy(serial, &s2.serial[1], s2.serial[0]);
+		dev = &s2;
 	} else {
 		return -1;
 	}
 
-	return 0;
+	return rtlsdr_get_usb_strings(dev, manufact, product, serial);
 }
 
 int rtlsdr_get_index_by_serial(const char *serial) {
@@ -486,12 +485,27 @@ int rtlsdr_get_index_by_serial(const char *serial) {
 	if (!serial)
 		return -1;
 
-	if (!strcmp(serial, &(s0.serial[1]))) {
+	char s[40];
+
+	int e = rtlsdr_get_usb_strings(&s0, 0, 0, &s[0]);
+	if (e != 0)
+		return e;
+	if (!strcmp(serial, &s[0])) {
 		return 0;
-	} else if (!strcmp(serial, &(s1.serial[1]))) {
-		return 1;
-	} else if (!strcmp(serial, &(s1.serial[1]))) {
-		return 2;
+	}
+
+	e = rtlsdr_get_usb_strings(&s1, 0, 0, &s[0]);
+	if (e != 0)
+		return e;
+	if (!strcmp(serial, &s[0])) {
+		return 0;
+	}
+
+	e = rtlsdr_get_usb_strings(&s2, 0, 0, &s[0]);
+	if (e != 0)
+		return e;
+	if (!strcmp(serial, &s[0])) {
+		return 0;
 	}
 
 	return -2;

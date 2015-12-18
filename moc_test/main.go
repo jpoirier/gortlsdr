@@ -63,22 +63,39 @@ func GetXtalFreq(d *rtl.Context, i int) {
 }
 
 func GetUsbStrings(d *rtl.Context, i int) {
-	if _, _, _, err := d.GetUsbStrings(); err != nil {
+	if m, p, s, err := d.GetUsbStrings(); err != nil {
 		failed++
 		log.Printf("--- FAILED, GetUsbStrings i:%d - %s\n", i, err)
 	} else {
 		passed++
 		log.Printf("--- PASSED, GetUsbStrings i:%d\n", i)
+		fmt.Println(m, p, s)
 	}
 }
 
-// func WriteEeprom(d *rtl.Context, i int) {
-// 	d.WriteEeprom(data, offset, leng)
-// }
+func WriteEeprom(d *rtl.Context, i int) {
+	data := make([]byte, rtl.EepromSize, rtl.EepromSize)
+
+	if err := d.ReadEeprom(data, 0, rtl.EepromSize); err != nil {
+		failed++
+		log.Printf("--- FAILED, ReadEeprom i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, ReadEeprom i:%d\n", i)
+	}
+
+	if err := d.WriteEeprom(data, 0, rtl.EepromSize); err != nil {
+		failed++
+		log.Printf("--- FAILED, WriteEeprom i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, WriteEeprom i:%d\n", i)
+	}
+}
 
 func ReadEeprom(d *rtl.Context, i int) {
-	data := make([]byte, 72, 256)
-	if err := d.ReadEeprom(data, 9, 72); err != nil {
+	data := make([]byte, rtl.EepromSize, rtl.EepromSize)
+	if err := d.ReadEeprom(data, 0, rtl.EepromSize); err != nil {
 		failed++
 		log.Printf("--- FAILED, ReadEeprom i:%d - %s\n", i, err)
 	} else {
@@ -173,6 +190,7 @@ func SetTunerBw(d *rtl.Context, i int) {
 	}
 }
 
+// not implemented
 // func GetTunerBw(d *rtl.Context, i int) {
 // 	d.GetTunerBw
 // }
@@ -324,13 +342,39 @@ func ReadSync(d *rtl.Context, i int) {
 
 // }
 
-// func GetHwInfo(d *rtl.Context, i int) {
+func GetHwInfo(d *rtl.Context, i int) {
+	if info, err := d.GetHwInfo(); err != nil {
+		failed++
+		log.Printf("--- FAILED, GetHwInfo i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, GetHwInfo i:%d\n", i)
+		fmt.Println(info)
+	}
+}
 
-// }
+func SetHwInfo(d *rtl.Context, i int) {
+	var err error
+	var info rtl.HwInfo
 
-// func SetHwInfo(d *rtl.Context, i int) {
+	if info, err = d.GetHwInfo(); err != nil {
+		failed++
+		log.Printf("--- FAILED, GetHwInfo i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, GetHwInfo i:%d\n", i)
+		fmt.Println(info)
+	}
 
-// }
+	if err = d.SetHwInfo(info); err != nil {
+		failed++
+		log.Printf("--- FAILED, SetHwInfo i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, SetHwInfo i:%d\n", i)
+		fmt.Println(info)
+	}
+}
 
 func main() {
 	var cnt int
@@ -366,13 +410,14 @@ func main() {
 
 	serials := make([]string, 3)
 	for i := 0; i < cnt; i++ {
-		if _, _, s, err := GetDeviceUsbStrings(i); err != nil {
+		if m, p, s, err := GetDeviceUsbStrings(i); err != nil {
 			failed++
 			log.Printf("--- FAILED, GetDeviceUsbStrings i:%d, %s\n", i, err)
 		} else {
 			passed++
-			serials = append(serials, s)
+			serials[i] = s
 			log.Printf("--- PASSED, GetDeviceUsbStrings i:%d\n", i)
+			fmt.Println(m, p, s)
 		}
 	}
 
@@ -388,16 +433,6 @@ func main() {
 
 	for i, s := range serials {
 		if _, err := GetIndexBySerial(s); err != nil {
-			failed++
-			log.Printf("--- FAILED, GetIndexBySerial i:%d - %s\n", i, err)
-		} else {
-			passed++
-			log.Printf("--- PASSED, GetIndexBySerial i:%d\n", i)
-		}
-	}
-
-	for i, s := range []string{"One", "Two", "Three"} {
-		if _, err := GetIndexBySerial(s); err == nil {
 			failed++
 			log.Printf("--- FAILED, GetIndexBySerial i:%d - %s\n", i, err)
 		} else {
@@ -433,10 +468,10 @@ func main() {
 		GetXtalFreq(d, i)
 		SetXtalFreq(d, i)
 
-		GetUsbStrings(d, i)
-
+		WriteEeprom(d, i)
 		ReadEeprom(d, i)
-		// WriteEeprom(d, i)
+
+		GetUsbStrings(d, i)
 
 		GetCenterFreq(d, i)
 		SetCenterFreq(d, i)
@@ -449,6 +484,7 @@ func main() {
 		GetTunerGains(d, i)
 		SetTunerGain(d, i)
 
+		// not implemented
 		// GetTunerBw(d, i)
 		SetTunerBw(d, i)
 
@@ -471,8 +507,8 @@ func main() {
 
 		ResetBuffer(d, i)
 
-		// GetHwInfo(d, i)
-		// SetHwInfo(d, i)
+		SetHwInfo(d, i)
+		GetHwInfo(d, i)
 
 		ReadSync(d, i)
 		// ReadAsync(d, i)

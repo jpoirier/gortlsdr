@@ -79,11 +79,11 @@ type HwInfo struct {
 }
 
 const (
-	eepromSize = 256
-	// maxStrSize = (max string length - 2 (header bytes)) \ 2. Where each
+	EepromSize = 256
+	// MaxStrSize = (max string length - 2 (header bytes)) \ 2. Where each
 	// info character is followed by a null char.
-	maxStrSize     = 35
-	strOffsetStart = 0x09
+	MaxStrSize     = 35
+	StrOffsetStart = 0x09
 )
 
 // SamplingMode is the sampling mode type.
@@ -107,7 +107,7 @@ const (
 // Note, librtlsdr's SetFreqCorrection returns an error value of
 // -2 when the current ppm is the same as the requested ppm, but
 // gortlsdr replaces the -2 with nil. Also, most of librtlsdr's
-// functions return 0 on succes and -1 when dev is invalid but
+// functions return 0 on success and -1 when dev is invalid but
 // some return 0 when dev is invalid, go figure.
 const (
 	libSuccess = iota * -1
@@ -584,8 +584,8 @@ func (dev *Context) CancelAsync() error {
 
 // GetHwInfo gets the dongle's information items.
 func (dev *Context) GetHwInfo() (info HwInfo, err error) {
-	data := make([]uint8, eepromSize)
-	if err = dev.ReadEeprom(data, 0, eepromSize); err != nil {
+	data := make([]uint8, EepromSize)
+	if err = dev.ReadEeprom(data, 0, EepromSize); err != nil {
 		return
 	}
 	if (data[0] != 0x28) || (data[1] != 0x32) {
@@ -609,7 +609,7 @@ func (dev *Context) GetHwInfo() (info HwInfo, err error) {
 
 // SetHwInfo sets the dongle's information items.
 func (dev *Context) SetHwInfo(info HwInfo) (err error) {
-	data := make([]uint8, eepromSize)
+	data := make([]uint8, EepromSize)
 	data[0] = 0x28
 	data[1] = 0x32
 	data[2] = uint8(info.VendorID)
@@ -629,16 +629,16 @@ func (dev *Context) SetHwInfo(info HwInfo) (err error) {
 	if err = SetStringDescriptors(info, data); err != nil {
 		return err
 	}
-	return dev.WriteEeprom(data, 0, eepromSize)
+	return dev.WriteEeprom(data, 0, EepromSize)
 }
 
 // GetStringDescriptors gets the manufacturer, product, and serial
 // strings from the hardware's eeprom.
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
-	pos := strOffsetStart
+	pos := StrOffsetStart
 	for _, v := range []*string{&manufact, &product, &serial} {
 		l := int(data[pos])
-		if l > (maxStrSize*2)+2 {
+		if l > (MaxStrSize*2)+2 {
 			err = errors.New("string value too long")
 			return
 		}
@@ -663,20 +663,20 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 // strings on the hardware's eeprom.
 func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 	e := ""
-	if len(info.Manufact) > maxStrSize {
+	if len(info.Manufact) > MaxStrSize {
 		e += "Manufact:"
 	}
-	if len(info.Product) > maxStrSize {
+	if len(info.Product) > MaxStrSize {
 		e += "Product:"
 	}
-	if len(info.Serial) > maxStrSize {
+	if len(info.Serial) > MaxStrSize {
 		e += "Serial:"
 	}
 	if len(e) != 0 {
 		err = errors.New(e + " string/s too long")
 		return
 	}
-	pos := strOffsetStart
+	pos := StrOffsetStart
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
 		data[pos] = uint8((len(v) * 2) + 2)
 		data[pos+1] = 0x03
