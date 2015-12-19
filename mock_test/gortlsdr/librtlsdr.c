@@ -555,7 +555,6 @@ int rtlsdr_reset_buffer(rtlsdr_dev_t *dev) {
 	return 0;
 }
 
-// TODO:
 int rtlsdr_read_sync(rtlsdr_dev_t *dev, void *buf, int len, int *n_read) {
 	if (!dev || !dev_valid(dev))
 		return -1;
