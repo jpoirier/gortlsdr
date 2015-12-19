@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "rtl-sdr_moc.h"
 
@@ -25,39 +27,15 @@
 #define STRINGS_OFFSET_START (9)
 #define MAX_RAW_STR_SZ (2*35+2)
 
-// struct rtlsdr_dev {
-// 	libusb_context *ctx;
-// 	struct libusb_device_handle *devh;
-// 	uint32_t xfer_buf_num;
-// 	uint32_t xfer_buf_len;
-// 	struct libusb_transfer **xfer;
-// 	unsigned char **xfer_buf;
-// 	rtlsdr_read_async_cb_t cb;
-// 	void *cb_ctx;
-// 	enum rtlsdr_async_status async_status;
-// 	int async_cancel;
-// 	/* rtl demod context */
-// 	uint32_t rate; /* Hz */
-// 	uint32_t rtl_xtal; /* Hz */
-// 	int fir[FIR_LEN];
-// 	int direct_sampling;
-// 	/* tuner context */
-// 	enum rtlsdr_tuner tuner_type;
-// 	rtlsdr_tuner_iface_t *tuner;
-// 	uint32_t tun_xtal; /* Hz */
-// 	uint32_t freq; /* Hz */
-// 	uint32_t bw;
-// 	uint32_t offs_freq; /* Hz */
-// 	int corr; /* ppm */
-// 	int gain; /* tenth dB */
-// 	struct e4k_state e4k_s;
-// 	struct r82xx_config r82xx_c;
-// 	struct r82xx_priv r82xx_p;
-// 	/* status */
-// 	int dev_lost;
-// 	int driver_active;
-// 	unsigned int xfer_errors;
-// };
+
+static void do_init(void);
+static bool dev_valid(rtlsdr_dev_t *dev);
+
+enum rtlsdr_async_status {
+	RTLSDR_INACTIVE = 0,
+	RTLSDR_CANCELING,
+	RTLSDR_RUNNING
+};
 
 struct rtlsdr_dev {
 	bool status;
@@ -74,7 +52,14 @@ struct rtlsdr_dev {
 	int agc_mode;
 	int direct_sampling_mode;
 	int offset_tuning;
+	uint32_t xfer_buf_num;
+	uint32_t xfer_buf_len;
 	enum rtlsdr_tuner type;
+	enum rtlsdr_async_status async_status;
+	rtlsdr_read_async_cb_t cb;
+	int async_cancel;
+	void *cb_ctx;
+	pthread_mutex_t lock;
 	char eeprom_buffer[256];
 	int gains[DEVICE_GAIN_CNT];
 	char xbuf[DEFAULT_BUF_LENGTH];
@@ -97,13 +82,15 @@ strings are written as "["char", 0x00]" pairs
 
 static int device_count = DEBVICE_CNT;
 
-struct rtlsdr_dev s0 = {0};
-struct rtlsdr_dev s1 = {0};
-struct rtlsdr_dev s2 = {0};
+static struct rtlsdr_dev s0 = {0};
+static struct rtlsdr_dev s1 = {0};
+static struct rtlsdr_dev s2 = {0};
 
 struct rtlsdr_dev *rtlsdr_devs[DEBVICE_CNT] = {&s0, &s1, &s2};
 
 static bool is_initialized = false;
+
+static pthread_t tid;
 
 void do_init(void) {
 	if (is_initialized)
@@ -517,21 +504,32 @@ int rtlsdr_open(rtlsdr_dev_t **out_dev, uint32_t index) {
 	if (!out_dev)
 		return -1;
 
+	// FIXME:
+	// if (pthread_mutex_init(&lock, NULL) != 0) {
+	// 	return 1;
+	// }
+
 	int status = 1;
 	switch(index) {
 	case 0:
 		*out_dev = &s0;
 		s0.status = true;
+		s0.async_status = RTLSDR_INACTIVE;
+		pthread_mutex_init(&s0.lock, NULL);
 		status = 0;
 		break;
 	case 1:
 		*out_dev = &s1;
 		s1.status = true;
+		s1.async_status = RTLSDR_INACTIVE;
+		pthread_mutex_init(&s1.lock, NULL);
 		status = 0;
 		break;
 	case 2:
-		*out_dev = &s1;
+		*out_dev = &s2;
 		s2.status = true;
+		s2.async_status = RTLSDR_INACTIVE;
+		pthread_mutex_init(&s2.lock, NULL);
 		status = 0;
 		break;
 	}
@@ -547,7 +545,6 @@ int rtlsdr_close(rtlsdr_dev_t *dev) {
 	return 0;
 }
 
-// TODO:
 int rtlsdr_reset_buffer(rtlsdr_dev_t *dev) {
 	if (!dev || !dev_valid(dev))
 		return -1;
@@ -567,8 +564,8 @@ int rtlsdr_read_sync(rtlsdr_dev_t *dev, void *buf, int len, int *n_read) {
 		memcpy(buf, &s0.xbuf[0], len);
 	} else if (dev == &s1) {
 		memcpy(buf, &s1.xbuf[0], len);
-	} else if (dev == &s1) {
-		memcpy(buf, &s1.xbuf[0], len);
+	} else if (dev == &s2) {
+		memcpy(buf, &s2.xbuf[0], len);
 	} else {
 		return -2;
 	}
@@ -576,7 +573,25 @@ int rtlsdr_read_sync(rtlsdr_dev_t *dev, void *buf, int len, int *n_read) {
 	return 0;
 }
 
-// TODO:
+static unsigned char async_buf[DEFAULT_BUF_LENGTH];
+void read_asyn_handler(void *dev) {
+	struct rtlsdr_dev *d = (struct rtlsdr_dev*)dev;
+	rtlsdr_read_async_cb_t cb = d->cb;
+	// void *cb_ctx = d->cb_ctx;
+
+	for (;;) {
+		pthread_mutex_lock(&d->lock);
+		if (d->async_status == RTLSDR_CANCELING) {
+			pthread_mutex_unlock(&d->lock);
+			break;
+		}
+		pthread_mutex_unlock(&d->lock);
+		cb(async_buf, DEFAULT_BUF_LENGTH, NULL);
+		sleep(1);
+	}
+	d->async_status = RTLSDR_INACTIVE;
+}
+
 int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx,
 			  uint32_t buf_num, uint32_t buf_len) {
 	// unsigned int i;
@@ -588,108 +603,41 @@ int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx,
 	if (!dev || !dev_valid(dev))
 		return -1;
 
-	// if (RTLSDR_INACTIVE != dev->async_status)
-	// 	return -2;
+	if (RTLSDR_INACTIVE != dev->async_status)
+		return -2;
 
-	// dev->async_status = RTLSDR_RUNNING;
-	// dev->async_cancel = 0;
+	dev->async_status = RTLSDR_RUNNING;
+	dev->async_cancel = 0;
 
-	// dev->cb = cb;
-	// dev->cb_ctx = ctx;
+	dev->cb = cb;
+	dev->cb_ctx = ctx;
 
-	// if (buf_num > 0)
-	// 	dev->xfer_buf_num = buf_num;
-	// else
-	// 	dev->xfer_buf_num = DEFAULT_BUF_NUMBER;
+	if (buf_num > 0)
+		dev->xfer_buf_num = buf_num;
+	else
+		dev->xfer_buf_num = DEFAULT_BUF_NUMBER;
 
-	// if (buf_len > 0 && buf_len % 512 == 0) /* len must be multiple of 512 */
+	// if (buf_len > 0 && buf_len % 512 == 0)  len must be multiple of 512
 	// 	dev->xfer_buf_len = buf_len;
 	// else
-	// 	dev->xfer_buf_len = DEFAULT_BUF_LENGTH;
+		dev->xfer_buf_len = DEFAULT_BUF_LENGTH;
 
-	// _rtlsdr_alloc_async_buffers(dev);
-
-	// for(i = 0; i < dev->xfer_buf_num; ++i) {
-	// 	libusb_fill_bulk_transfer(dev->xfer[i],
-	// 				  dev->devh,
-	// 				  0x81,
-	// 				  dev->xfer_buf[i],
-	// 				  dev->xfer_buf_len,
-	// 				  _libusb_callback,
-	// 				  (void *)dev,
-	// 				  BULK_TIMEOUT);
-
-	// 	r = libusb_submit_transfer(dev->xfer[i]);
-	// 	if (r < 0) {
-	// 		fprintf(stderr, "Failed to submit transfer %i!\n", i);
-	// 		dev->async_status = RTLSDR_CANCELING;
-	// 		break;
-	// 	}
-	// }
-
-	// while (RTLSDR_INACTIVE != dev->async_status) {
-	// 	r = libusb_handle_events_timeout_completed(dev->ctx, &tv,
-	// 						   &dev->async_cancel);
-	// 	if (r < 0) {
-	// 		/*fprintf(stderr, "handle_events returned: %d\n", r);*/
-	// 		if (r == LIBUSB_ERROR_INTERRUPTED) /* stray signal */
-	// 			continue;
-	// 		break;
-	// 	}
-
-	// 	if (RTLSDR_CANCELING == dev->async_status) {
-	// 		next_status = RTLSDR_INACTIVE;
-
-	// 		if (!dev->xfer)
-	// 			break;
-
-	// 		for(i = 0; i < dev->xfer_buf_num; ++i) {
-	// 			if (!dev->xfer[i])
-	// 				continue;
-
-	// 			if (LIBUSB_TRANSFER_CANCELLED !=
-	// 					dev->xfer[i]->status) {
-	// 				r = libusb_cancel_transfer(dev->xfer[i]);
-	// 				/* handle events after canceling
-	// 				 * to allow transfer status to
-	// 				 * propagate */
-	// 				libusb_handle_events_timeout_completed(dev->ctx,
-	// 								       &zerotv, NULL);
-	// 				if (r < 0)
-	// 					continue;
-
-	// 				next_status = RTLSDR_CANCELING;
-	// 			}
-	// 		}
-
-	// 		if (dev->dev_lost || RTLSDR_INACTIVE == next_status) {
-	// 			/* handle any events that still need to
-	// 			 * be handled before exiting after we
-	// 			 * just cancelled all transfers */
-	// 			libusb_handle_events_timeout_completed(dev->ctx,
-	// 							       &zerotv, NULL);
-	// 			break;
-	// 		}
-	// 	}
-	// }
-
-	// _rtlsdr_free_async_buffers(dev);
-
-	// dev->async_status = next_status;
+	if (pthread_create(&tid, NULL, (void*)read_asyn_handler, (void*)dev) != 0)
+		return -3;
 
 	return 0;
 }
 
-// TODO:
 int rtlsdr_cancel_async(rtlsdr_dev_t *dev) {
 	if (!dev || !dev_valid(dev))
 		return -1;
 
-	// /* if streaming, try to cancel gracefully */
-	// if (RTLSDR_RUNNING == dev->async_status) {
-	// 	dev->async_status = RTLSDR_CANCELING;
-	// 	dev->async_cancel = 1;
-	// 	return 0;
-	// }
+	// if streaming, try to cancel gracefully
+	pthread_mutex_lock(&dev->lock);
+	if (RTLSDR_RUNNING == dev->async_status) {
+		dev->async_status = RTLSDR_CANCELING;
+		dev->async_cancel = 1;
+	}
+	pthread_mutex_unlock(&dev->lock);
 	return 0;
 }

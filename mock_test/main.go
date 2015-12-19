@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	rtl "./gortlsdr"
 )
@@ -334,14 +335,6 @@ func ReadSync(d *rtl.Context, i int) {
 	}
 }
 
-// func ReadAsync(d *rtl.Context, i int) {
-
-// }
-
-// func CancelAsync(d *rtl.Context, i int) {
-
-// }
-
 func GetHwInfo(d *rtl.Context, i int) {
 	if info, err := d.GetHwInfo(); err != nil {
 		failed++
@@ -374,6 +367,13 @@ func SetHwInfo(d *rtl.Context, i int) {
 		log.Printf("--- PASSED, SetHwInfo i:%d\n", i)
 		fmt.Println(info)
 	}
+}
+
+var asyncReadCnt int
+
+func rtlsdrCb(buf []byte) {
+	asyncReadCnt++
+	log.Printf("Cnt:%d, Length: %d\n", asyncReadCnt, len(buf))
 }
 
 func main() {
@@ -505,22 +505,40 @@ func main() {
 		GetOffsetTuning(d, i)
 		SetOffsetTuning(d, i)
 
-		ResetBuffer(d, i)
-
 		SetHwInfo(d, i)
 		GetHwInfo(d, i)
 
 		ReadSync(d, i)
-		// ReadAsync(d, i)
 
-		// CancelAsync(d, i)
+		ResetBuffer(d, i)
+		asyncReadCnt = 0
+		err = d.ReadAsync(rtlsdrCb, nil, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+		if err == nil {
+			passed++
+			log.Printf("ReadAsync start successful: %d\n", i)
+
+			log.Printf("---Sleeping for 10 seconds while async read runs...\n")
+			time.Sleep(10 * time.Second)
+
+			if err := d.CancelAsync(); err != nil {
+				failed++
+				log.Printf("CancelAsync failed: %d - %s\n", i, err)
+			} else {
+				passed++
+				log.Printf("CancelAsync successful: %d\n", i)
+				time.Sleep(2 * time.Second)
+			}
+		} else {
+			failed++
+			log.Printf("\tReadAsync start fail: %d - %s\n", i, err)
+		}
 
 		if err = d.Close(); err != nil {
 			failed++
-			log.Printf("--- FAILED, Close %s - %s...\n", err, i)
+			log.Printf("--- FAILED, Close %d - %s...\n", i, err)
 		} else {
 			passed++
-			log.Println("--- PASSED, Close...")
+			log.Printf("--- PASSED, Close: %d\n", i)
 		}
 	}
 

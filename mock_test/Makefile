@@ -1,8 +1,8 @@
 #
 
 all:
-	# cd gortlsdr && gcc -fPIC -shared -Wl,-soname,librtlsdr.so.0 -o librtlsdr.so.0 librtlsdr.c
-	cd gortlsdr && gcc -Wall -c librtlsdr.c -o librtlsdr.o
+	# cd gortlsdr && gcc -fPIC -shared -Wl,-soname,librtlsdr.so.0 -lpthread -o librtlsdr.so.0 librtlsdr.c
+	cd gortlsdr && gcc -Wall -c librtlsdr.c -lpthread -o librtlsdr.o
 	cd gortlsdr && ar rcs librtlsdr.a librtlsdr.o
 	cd gortlsdr && cp ../../rtlsdr.go .
 	cd gortlsdr && cp ../../exports.go .
