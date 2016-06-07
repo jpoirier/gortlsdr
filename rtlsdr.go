@@ -8,6 +8,7 @@
 package rtlsdr
 
 import (
+	"bytes"
 	"errors"
 	"unsafe"
 )
@@ -196,7 +197,8 @@ func GetDeviceUsbStrings(index int) (manufact, product, serial string, err error
 		(*C.char)(unsafe.Pointer(&m[0])),
 		(*C.char)(unsafe.Pointer(&p[0])),
 		(*C.char)(unsafe.Pointer(&s[0]))))
-	return string(m), string(p), string(s), libError(i)
+	return string(bytes.Trim(m, "\x00")), string(bytes.Trim(p, "\x00")),
+		string(bytes.Trim(s, "\x00")), libError(i)
 }
 
 // GetIndexBySerial returns a device index by serial id.
