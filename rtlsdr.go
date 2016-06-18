@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2015 Joseph D Poirier
+// Copyright (c) 2012-2016 Joseph D Poirier
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
@@ -8,6 +8,7 @@
 package rtlsdr
 
 import (
+	"bytes"
 	"errors"
 	"unsafe"
 )
@@ -37,7 +38,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 import "C"
 
 // PackageVersion is the current version
-var PackageVersion = "v2.9.15"
+var PackageVersion = "v2.9.16"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
@@ -79,10 +80,12 @@ type HwInfo struct {
 }
 
 const (
+	// EepromSize is the char size of the EEPROM
 	EepromSize = 256
 	// MaxStrSize = (max string length - 2 (header bytes)) \ 2,
 	// where each info char is followed by a null char.
-	MaxStrSize     = 35
+	MaxStrSize = 35
+	// StrOffsetStart is the string descriptor offset start
 	StrOffsetStart = 0x09
 )
 
@@ -151,7 +154,7 @@ var libErrMap = map[int]error{
 	libErrorOther:        errors.New("unknown error"),
 }
 
-// Sampling modes map.
+// SamplingModes is a map of available sampling modes.
 var SamplingModes = map[SamplingMode]string{
 	SamplingNone:    "Disabled",
 	SamplingIADC:    "I-ADC Enabled",
@@ -196,7 +199,8 @@ func GetDeviceUsbStrings(index int) (manufact, product, serial string, err error
 		(*C.char)(unsafe.Pointer(&m[0])),
 		(*C.char)(unsafe.Pointer(&p[0])),
 		(*C.char)(unsafe.Pointer(&s[0]))))
-	return string(m), string(p), string(s), libError(i)
+	return string(bytes.Trim(m, "\x00")), string(bytes.Trim(p, "\x00")),
+		string(bytes.Trim(s, "\x00")), libError(i)
 }
 
 // GetIndexBySerial returns a device index by serial id.
@@ -267,7 +271,8 @@ func (dev *Context) GetUsbStrings() (manufact, product, serial string, err error
 		(*C.char)(unsafe.Pointer(&m[0])),
 		(*C.char)(unsafe.Pointer(&p[0])),
 		(*C.char)(unsafe.Pointer(&s[0]))))
-	return string(m), string(p), string(s), libError(i)
+	return string(bytes.Trim(m, "\x00")), string(bytes.Trim(p, "\x00")),
+		string(bytes.Trim(s, "\x00")), libError(i)
 }
 
 // WriteEeprom writes data to the EEPROM.
@@ -653,7 +658,7 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 			m[k] = data[pos+j]
 			k++
 		}
-		*v = string(m)
+		*v = string(bytes.Trim(m, "\x00"))
 		pos += j
 	}
 	return

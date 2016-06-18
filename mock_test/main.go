@@ -511,13 +511,26 @@ func main() {
 		ReadSync(d, i)
 
 		ResetBuffer(d, i)
+
+		log.Printf("\n----- ReadSync starting: %d -----\n", i)
+		var buf = make([]uint8, rtl.DefaultBufLength)
+		nRead, err := d.ReadSync(buf, rtl.DefaultBufLength)
+		if err != nil {
+			log.Printf("\tReadSync Failed - error: %s\n", err)
+		} else {
+			log.Printf("\tReadSync %d\n", nRead)
+			if nRead < rtl.DefaultBufLength {
+				log.Printf("ReadSync short read, %d samples lost\n", rtl.DefaultBufLength-nRead)
+			}
+		}
+
 		asyncReadCnt = 0
 		err = d.ReadAsync(rtlsdrCb, nil, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
 		if err == nil {
 			passed++
-			log.Printf("ReadAsync start successful: %d\n", i)
+			log.Printf("\n----- ReadAsync start successful: %d -----\n", i)
 
-			log.Printf("---Sleeping for 10 seconds while async read runs...\n")
+			log.Printf("     sleeping for 10 seconds while async read runs...\n")
 			time.Sleep(10 * time.Second)
 
 			if err := d.CancelAsync(); err != nil {
