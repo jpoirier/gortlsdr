@@ -30,9 +30,9 @@ import (
 #include <rtl-sdr.h>
 #endif
 
-extern void goCallback(unsigned char *buf, uint32_t len, void *ctx);
+extern void goRTLSDRCallback(unsigned char *buf, uint32_t len, void *ctx);
 static inline rtlsdr_read_async_cb_t get_go_cb() {
-	return (rtlsdr_read_async_cb_t)goCallback;
+	return (rtlsdr_read_async_cb_t)goRTLSDRCallback;
 }
 */
 import "C"
