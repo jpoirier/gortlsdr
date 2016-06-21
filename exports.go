@@ -18,8 +18,8 @@ import (
 */
 import "C"
 
-//export goCallback
-func goCallback(p1 *C.uchar, p2 C.uint32_t, _ unsafe.Pointer) {
+//export goRTLSDRCallback
+func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, _ unsafe.Pointer) {
 	// c buffer to go slice without copying
 	var buf []byte
 	length := int(p2)
