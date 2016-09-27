@@ -624,7 +624,7 @@ func (dev *Context) GetHwInfo() (info HwInfo, err error) {
 }
 
 // SetHwInfo sets the dongle's information items.
-func (dev *Context) SetHwInfo(info HwInfo) (err error) {
+func (dev *Context) SetHwInfo(info HwInfo) error {
 	data := make([]uint8, EepromSize)
 	data[0] = 0x28
 	data[1] = 0x32
@@ -642,7 +642,7 @@ func (dev *Context) SetHwInfo(info HwInfo) (err error) {
 	if info.EnableIR == true {
 		data[7] = data[7] | 0x02
 	}
-	if err = SetStringDescriptors(info, data); err != nil {
+	if err := SetStringDescriptors(info, data); err != nil {
 		return err
 	}
 	return dev.WriteEeprom(data, 0, EepromSize)
