@@ -324,7 +324,7 @@ func (dev *Context) ReadEeprom(data []uint8, offset uint8, leng uint16) (err err
 }
 
 // SetCenterFreq sets the center frequency.
-func (dev *Context) SetCenterFreq(freqHz int) (err error) {
+func (dev *Context) SetCenterFreq(freqHz int) error {
 	i := int(C.rtlsdr_set_center_freq(dev.rtldev,
 		C.uint32_t(freqHz)))
 	return libError(i)
