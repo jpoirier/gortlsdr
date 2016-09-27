@@ -391,14 +391,14 @@ func (dev *Context) GetTunerGains() ([]int, error) {
 // queried using GetTunerGains.
 //
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (dev *Context) SetTunerGain(gainTenthsDb int) (err error) {
+func (dev *Context) SetTunerGain(gainTenthsDb int) error {
 	i := int(C.rtlsdr_set_tuner_gain(dev.rtldev,
 		C.int(gainTenthsDb)))
 	return libError(i)
 }
 
 // SetTunerBw sets the device bandwidth.
-func (dev *Context) SetTunerBw(bwHz int) (err error) {
+func (dev *Context) SetTunerBw(bwHz int) error {
 	i := int(C.rtlsdr_set_tuner_bandwidth(dev.rtldev,
 		C.uint32_t(bwHz)))
 	return libError(i)
