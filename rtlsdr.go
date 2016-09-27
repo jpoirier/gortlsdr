@@ -258,11 +258,13 @@ func (dev *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) error {
 
 // GetXtalFreq returns the crystal oscillator frequencies.
 // Typically both ICs use the same clock.
-func (dev *Context) GetXtalFreq() (rtlFreqHz, tunerFreqHz int, err error) {
+// returns rtlFreqHz, tunerFreqHz, error
+func (dev *Context) GetXtalFreq() (int, int, error) {
+	var rtlFreqHz, tunerFreqHz C.uint32_t
 	i := int(C.rtlsdr_get_xtal_freq(dev.rtldev,
-		(*C.uint32_t)(unsafe.Pointer(&rtlFreqHz)),
-		(*C.uint32_t)(unsafe.Pointer(&tunerFreqHz))))
-	return rtlFreqHz, tunerFreqHz, libError(i)
+		&rtlFreqHz,
+		&tunerFreqHz))
+	return int(rtlFreqHz), int(tunerFreqHz), libError(i)
 }
 
 // GetUsbStrings returns the device information. Note, strings may be empty.
