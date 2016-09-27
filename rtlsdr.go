@@ -336,13 +336,13 @@ func (dev *Context) GetCenterFreq() int {
 }
 
 // SetFreqCorrection sets the frequency correction.
-func (dev *Context) SetFreqCorrection(ppm int) (err error) {
+func (dev *Context) SetFreqCorrection(ppm int) error {
 	i := int(C.rtlsdr_set_freq_correction(dev.rtldev,
 		C.int(ppm)))
 	// error code -2 means the requested PPM is the same as
 	// the current PPM (dev->corr == PPM)
 	if i == -2 {
-		return libError(0)
+		return nil
 	}
 	return libError(i)
 }
