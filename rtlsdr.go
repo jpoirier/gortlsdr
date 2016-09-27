@@ -461,7 +461,7 @@ func (dev *Context) GetSampleRate() int {
 //
 // Test mode returns 8 bit counters instead of samples. Note,
 // the counter is generated inside the device.
-func (dev *Context) SetTestMode(testMode bool) (err error) {
+func (dev *Context) SetTestMode(testMode bool) error {
 	mode := 0 // test mode off
 	if testMode {
 		mode = 1 // test mode on
@@ -472,7 +472,7 @@ func (dev *Context) SetTestMode(testMode bool) (err error) {
 }
 
 // SetAgcMode sets the AGC mode.
-func (dev *Context) SetAgcMode(AGCMode bool) (err error) {
+func (dev *Context) SetAgcMode(AGCMode bool) error {
 	mode := 0 // AGC off
 	if AGCMode {
 		mode = 1 // AGC on
@@ -487,7 +487,7 @@ func (dev *Context) SetAgcMode(AGCMode bool) (err error) {
 // When enabled, the IF mode of the device is activated, and
 // SetCenterFreq() will control the IF-frequency of the DDC, which
 // can be used to tune from 0 to 28.8 MHz (xtal frequency of the device).
-func (dev *Context) SetDirectSampling(mode SamplingMode) (err error) {
+func (dev *Context) SetDirectSampling(mode SamplingMode) error {
 	i := int(C.rtlsdr_set_direct_sampling(dev.rtldev,
 		C.int(mode)))
 	return libError(i)
