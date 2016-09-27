@@ -677,7 +677,7 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 
 // SetStringDescriptors sets the manufacturer, product, and serial
 // strings on the hardware's eeprom.
-func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
+func SetStringDescriptors(info HwInfo, data []uint8) error {
 	e := ""
 	if len(info.Manufact) > MaxStrSize {
 		e += "Manufact:"
@@ -689,8 +689,7 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 		e += "Serial:"
 	}
 	if len(e) != 0 {
-		err = errors.New(e + " string/s too long")
-		return
+		return errors.New(e + " string/s too long")
 	}
 	pos := StrOffsetStart
 	for _, v := range []string{info.Manufact, info.Product, info.Serial} {
@@ -705,5 +704,5 @@ func SetStringDescriptors(info HwInfo, data []uint8) (err error) {
 		}
 		pos += i
 	}
-	return
+	return nil
 }
