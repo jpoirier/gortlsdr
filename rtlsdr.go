@@ -331,7 +331,7 @@ func (dev *Context) SetCenterFreq(freqHz int) error {
 }
 
 // GetCenterFreq returns the tuned frequency or zero on error.
-func (dev *Context) GetCenterFreq() (freqHz int) {
+func (dev *Context) GetCenterFreq() int {
 	return int(C.rtlsdr_get_center_freq(dev.rtldev))
 }
 
