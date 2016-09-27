@@ -514,7 +514,7 @@ func (dev *Context) GetDirectSampling() (mode SamplingMode, err error) {
 
 // SetOffsetTuning sets the offset tuning mode for zero-IF tuners, which
 // avoids problems caused by the DC offset of the ADCs and 1/f noise.
-func (dev *Context) SetOffsetTuning(enable bool) (err error) {
+func (dev *Context) SetOffsetTuning(enable bool) error {
 	mode := 0 // offset tuning off
 	if enable {
 		mode = 1 // offset tuning on
