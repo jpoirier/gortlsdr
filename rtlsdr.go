@@ -266,7 +266,8 @@ func (dev *Context) GetXtalFreq() (rtlFreqHz, tunerFreqHz int, err error) {
 }
 
 // GetUsbStrings returns the device information. Note, strings may be empty.
-func (dev *Context) GetUsbStrings() (manufact, product, serial string, err error) {
+// returns manufact, product, serial , error
+func (dev *Context) GetUsbStrings() (string, string, string, error) {
 	m := [257]byte{} // includes space for NULL byte
 	p := [257]byte{}
 	s := [257]byte{}
