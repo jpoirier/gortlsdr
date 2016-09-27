@@ -542,19 +542,24 @@ func (dev *Context) GetOffsetTuning() (enabled bool, err error) {
 // streaming functions
 
 // ResetBuffer resets the streaming buffer.
-func (dev *Context) ResetBuffer() (err error) {
+func (dev *Context) ResetBuffer() error {
 	i := int(C.rtlsdr_reset_buffer(dev.rtldev))
 	return libError(i)
 }
 
 // ReadSync performs a synchronous read of samples and returns
 // the number of samples read.
-func (dev *Context) ReadSync(buf []uint8, leng int) (nRead int, err error) {
+// Warning! repeated/loop calls to ReadSync work reliable only for small
+// sample rates because of high cost of cgo calls
+// return number of read bytes, error
+func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
+	var nRead C.int
+	// FIXME use len(buf) for leng ? API change
 	i := int(C.rtlsdr_read_sync(dev.rtldev,
 		unsafe.Pointer(&buf[0]),
 		C.int(leng),
-		(*C.int)(unsafe.Pointer(&nRead))))
-	return nRead, libError(i)
+		&nRead))
+	return int(nRead), libError(i)
 }
 
 // Due to the restrictions imposed by the new
