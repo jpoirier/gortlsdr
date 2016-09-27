@@ -183,7 +183,7 @@ func libError(errno int) error {
 }
 
 // GetDeviceCount returns the number of devices detected.
-func GetDeviceCount() (count int) {
+func GetDeviceCount() int {
 	return int(C.rtlsdr_get_device_count())
 }
 
