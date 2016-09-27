@@ -347,8 +347,8 @@ func (dev *Context) SetFreqCorrection(ppm int) error {
 	return libError(i)
 }
 
-// GetFreqCorrection returns the frequency correction value.
-func (dev *Context) GetFreqCorrection() (ppm int) {
+// GetFreqCorrection returns the frequency correction value(ppm).
+func (dev *Context) GetFreqCorrection() int {
 	return int(C.rtlsdr_get_freq_correction(dev.rtldev))
 }
 
