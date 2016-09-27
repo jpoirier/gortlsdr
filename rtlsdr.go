@@ -195,15 +195,15 @@ func GetDeviceName(index int) string {
 // GetDeviceUsbStrings returns the information of a device by index.
 // returns manufact, product, serial, error
 func GetDeviceUsbStrings(index int) (string, string, string, error) {
-	m := make([]byte, 257) // includes space for NULL byte
-	p := make([]byte, 257)
-	s := make([]byte, 257)
+	m := [257]byte{} // includes space for NULL byte
+	p := [257]byte{}
+	s := [257]byte{}
 	i := int(C.rtlsdr_get_device_usb_strings(C.uint32_t(index),
 		(*C.char)(unsafe.Pointer(&m[0])),
 		(*C.char)(unsafe.Pointer(&p[0])),
 		(*C.char)(unsafe.Pointer(&s[0]))))
-	return string(bytes.Trim(m, "\x00")), string(bytes.Trim(p, "\x00")),
-		string(bytes.Trim(s, "\x00")), libError(i)
+	return string(bytes.Trim(m[:], "\x00")), string(bytes.Trim(p[:], "\x00")),
+		string(bytes.Trim(s[:], "\x00")), libError(i)
 }
 
 // GetIndexBySerial returns a device index by serial id.
