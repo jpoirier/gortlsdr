@@ -249,7 +249,7 @@ func (dev *Context) Close() error {
 // frequency (and sample rate) error caused by the original (cheap) crystal.
 //
 // Note, call this function only if you fully understand the implications.
-func (dev *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) (err error) {
+func (dev *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) error {
 	i := int(C.rtlsdr_set_xtal_freq(dev.rtldev,
 		C.uint32_t(rtlFreqHz),
 		C.uint32_t(tunerFreqHz)))
