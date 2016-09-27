@@ -18,8 +18,11 @@ import (
 import "C"
 
 //export goRTLSDRCallback
-func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, _ unsafe.Pointer) {
+func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, u unsafe.Pointer) {
 	n := int(p2)
 	buf := (*[1 << 24]byte)(unsafe.Pointer(p1))[:n:n]
-	clientCb(buf)
+	dev := contexts[int(uintptr(u))]
+	// FIXME add user context
+	// TODO add device ? many advaced rtl-sdr software use device inside callback
+	dev.clientCb(buf)
 }

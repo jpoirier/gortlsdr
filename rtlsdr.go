@@ -37,17 +37,24 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
+const MaxDevices = 100
+
 // PackageVersion is the current version
 var PackageVersion = "v2.9.16"
 
 // ReadAsyncCbT defines a user callback function type.
+// FIXME add user context
+// TODO add device ? many advaced rtl-sdr software use device inside callback
 type ReadAsyncCbT func([]byte)
 
-var clientCb ReadAsyncCbT
+var contexts [MaxDevices]*Context
 
 // Context is the opened device's context.
 type Context struct {
-	rtldev *C.rtlsdr_dev_t
+	rtldev   *C.rtlsdr_dev_t
+	clientCb ReadAsyncCbT
+	idx      int
+	userCtx  interface{}
 }
 
 // UserCtx defines the second parameter of the ReadAsync method
@@ -60,7 +67,7 @@ type Context struct {
 // A channel type assertion:  c, ok := (*userctx).(chan bool)
 //
 // A user context assertion:  device := (*userctx).(*rtl.Context)
-type UserCtx interface{}
+type UserCtx interface{} // TODO remove this type, better use interface{} ?
 
 // CustUserCtx allows a user to specify a unique callback function
 // and context with each call to ReadAsync2.
@@ -227,15 +234,20 @@ func GetIndexBySerial(serial string) (index int, err error) {
 }
 
 // Open returns an opened device by index.
+// this library support devices with index < MaxDevices
 func Open(index int) (*Context, error) {
 	var dev *C.rtlsdr_dev_t
 	i := int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&dev),
 		C.uint32_t(index)))
-	return &Context{rtldev: dev}, libError(i)
+	v := &Context{rtldev: dev, idx: index}
+	contexts[index] = v
+	return v, libError(i)
 }
 
 // Close closes the device.
 func (dev *Context) Close() error {
+	contexts[dev.idx] = nil
+	dev.idx = -1
 	i := int(C.rtlsdr_close(dev.rtldev)) // (*C.rtlsdr_dev_t)(dev)))
 	return libError(i)
 }
@@ -582,11 +594,12 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync(f ReadAsyncCbT, _ *UserCtx, bufNum, bufLen int) error {
-	clientCb = f
+func (dev *Context) ReadAsync(f ReadAsyncCbT, u *UserCtx, bufNum, bufLen int) error {
+	dev.clientCb = f
+	dev.userCtx = u
 	i := int(C.rtlsdr_read_async(dev.rtldev,
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
-		nil, // userctx *UserCtx
+		unsafe.Pointer(uintptr(dev.idx)),
 		C.uint32_t(bufNum),
 		C.uint32_t(bufLen)))
 	return libError(i)
