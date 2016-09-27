@@ -414,7 +414,7 @@ func (dev *Context) SetTunerBw(bwHz int) error {
 // GetTunerGain returns the tuner gain.
 //
 // Gain values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (dev *Context) GetTunerGain() (gainTenthsDb int) {
+func (dev *Context) GetTunerGain() int {
 	return int(C.rtlsdr_get_tuner_gain(dev.rtldev))
 }
 
