@@ -365,20 +365,20 @@ func (dev *Context) GetTunerType() (tunerType string) {
 
 // GetTunerGains returns a list of supported tuner gains.
 // Values are in tenths of dB, e.g. 115 means 11.5 dB.
-func (dev *Context) GetTunerGains() (gainsTenthsDb []int, err error) {
+func (dev *Context) GetTunerGains() ([]int, error) {
 	// count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
 	i := int(C.rtlsdr_get_tuner_gains(dev.rtldev,
 		(*C.int)(unsafe.Pointer(nil))))
 	if i <= 0 {
-		return gainsTenthsDb, libError(i)
+		return nil, libError(i)
 	}
 	buf := make([]C.int, i)
 	i = int(C.rtlsdr_get_tuner_gains(dev.rtldev,
 		(*C.int)(unsafe.Pointer(&buf[0]))))
 	if i <= 0 {
-		return gainsTenthsDb, libError(i)
+		return nil, libError(i)
 	}
-	gainsTenthsDb = make([]int, i)
+	gainsTenthsDb := make([]int, i)
 	for ii := 0; ii < i; ii++ {
 		gainsTenthsDb[ii] = int(buf[ii])
 	}
