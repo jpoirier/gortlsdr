@@ -235,7 +235,7 @@ func Open(index int) (*Context, error) {
 }
 
 // Close closes the device.
-func (dev *Context) Close() (err error) {
+func (dev *Context) Close() error {
 	i := int(C.rtlsdr_close(dev.rtldev)) // (*C.rtlsdr_dev_t)(dev)))
 	return libError(i)
 }
