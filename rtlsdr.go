@@ -422,7 +422,7 @@ func (dev *Context) GetTunerGain() int {
 //
 // Intermediate frequency gain stage number 1 to 6.
 // Gain values are in tenths of dB, e.g. -30 means -3.0 dB.
-func (dev *Context) SetTunerIfGain(stage, gainTenthsDb int) (err error) {
+func (dev *Context) SetTunerIfGain(stage, gainTenthsDb int) error {
 	i := int(C.rtlsdr_set_tuner_if_gain(dev.rtldev,
 		C.int(stage),
 		C.int(gainTenthsDb)))
@@ -431,7 +431,7 @@ func (dev *Context) SetTunerIfGain(stage, gainTenthsDb int) (err error) {
 
 // SetTunerGainMode sets the gain mode (automatic/manual).
 // Manual gain mode must be enabled for the gain setter function to work.
-func (dev *Context) SetTunerGainMode(manualMode bool) (err error) {
+func (dev *Context) SetTunerGainMode(manualMode bool) error {
 	mode := 0 // automatic tuner gain
 	if manualMode {
 		mode = 1 // manual tuner gain
@@ -445,7 +445,7 @@ func (dev *Context) SetTunerGainMode(manualMode bool) (err error) {
 //
 // When applicable, the baseband filters are also selected based
 // on the requested sample rate.
-func (dev *Context) SetSampleRate(rateHz int) (err error) {
+func (dev *Context) SetSampleRate(rateHz int) error {
 	i := int(C.rtlsdr_set_sample_rate(dev.rtldev,
 		C.uint32_t(rateHz)))
 	return libError(i)
