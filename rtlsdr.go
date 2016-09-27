@@ -452,8 +452,8 @@ func (dev *Context) SetSampleRate(rateHz int) error {
 
 }
 
-// GetSampleRate returns the sample rate.
-func (dev *Context) GetSampleRate() (rateHz int) {
+// GetSampleRate returns the sample rate in Hz.
+func (dev *Context) GetSampleRate() int {
 	return int(C.rtlsdr_get_sample_rate(dev.rtldev))
 }
 
