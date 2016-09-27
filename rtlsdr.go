@@ -267,15 +267,15 @@ func (dev *Context) GetXtalFreq() (rtlFreqHz, tunerFreqHz int, err error) {
 
 // GetUsbStrings returns the device information. Note, strings may be empty.
 func (dev *Context) GetUsbStrings() (manufact, product, serial string, err error) {
-	m := make([]byte, 257) // includes space for NULL byte
-	p := make([]byte, 257)
-	s := make([]byte, 257)
+	m := [257]byte{} // includes space for NULL byte
+	p := [257]byte{}
+	s := [257]byte{}
 	i := int(C.rtlsdr_get_usb_strings(dev.rtldev,
 		(*C.char)(unsafe.Pointer(&m[0])),
 		(*C.char)(unsafe.Pointer(&p[0])),
 		(*C.char)(unsafe.Pointer(&s[0]))))
-	return string(bytes.Trim(m, "\x00")), string(bytes.Trim(p, "\x00")),
-		string(bytes.Trim(s, "\x00")), libError(i)
+	return string(bytes.Trim(m[:], "\x00")), string(bytes.Trim(p[:], "\x00")),
+		string(bytes.Trim(s[:], "\x00")), libError(i)
 }
 
 // WriteEeprom writes data to the EEPROM.
