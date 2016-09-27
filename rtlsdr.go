@@ -188,12 +188,13 @@ func GetDeviceCount() int {
 }
 
 // GetDeviceName returns the name of the device by index.
-func GetDeviceName(index int) (name string) {
+func GetDeviceName(index int) string {
 	return C.GoString(C.rtlsdr_get_device_name(C.uint32_t(index)))
 }
 
 // GetDeviceUsbStrings returns the information of a device by index.
-func GetDeviceUsbStrings(index int) (manufact, product, serial string, err error) {
+// returns manufact, product, serial, error
+func GetDeviceUsbStrings(index int) (string, string, string, error) {
 	m := make([]byte, 257) // includes space for NULL byte
 	p := make([]byte, 257)
 	s := make([]byte, 257)
