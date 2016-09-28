@@ -37,12 +37,12 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-// Max index of device that can be opened by gortlsdr.
-// Equals theoretical maximum number of devices you can have on a single USB 2.0 controller
+// MaxDevices is the theoretical maximum number of devices
+// allowed on a single USB 2.0 controller
 const MaxDevices = 127
 
 // PackageVersion is the current version
-var PackageVersion = "v2.9.16"
+var PackageVersion = "v2.10.0"
 
 // ReadAsyncCbT defines a user callback function type.
 // FIXME add user context
@@ -70,13 +70,6 @@ type Context struct {
 //
 // A user context assertion:  device := (*userctx).(*rtl.Context)
 type UserCtx interface{} // TODO remove this type, better use interface{} ?
-
-// CustUserCtx allows a user to specify a unique callback function
-// and context with each call to ReadAsync2.
-// type CustUserCtx struct {
-// 	ClientCb ReadAsyncCbT
-// 	Userctx  *UserCtx
-// }
 
 // HwInfo holds dongle specific information.
 type HwInfo struct {
@@ -201,8 +194,8 @@ func GetDeviceName(index int) string {
 	return C.GoString(C.rtlsdr_get_device_name(C.uint32_t(index)))
 }
 
-// GetDeviceUsbStrings returns the information of a device by index.
-// returns manufact, product, serial, error
+// GetDeviceUsbStrings returns the manufact, product, and serial
+// information of a device based on index.
 func GetDeviceUsbStrings(index int) (string, string, string, error) {
 	m := [257]byte{} // includes space for NULL byte
 	p := [257]byte{}
@@ -215,7 +208,7 @@ func GetDeviceUsbStrings(index int) (string, string, string, error) {
 		string(bytes.Trim(s[:], "\x00")), libError(i)
 }
 
-// GetIndexBySerial returns a device index by serial id.
+// GetIndexBySerial returns the device index based on serial id.
 func GetIndexBySerial(serial string) (index int, err error) {
 	cstring := C.CString(serial)
 	defer C.free(unsafe.Pointer(cstring))
@@ -235,8 +228,7 @@ func GetIndexBySerial(serial string) (index int, err error) {
 	return
 }
 
-// Open returns an opened device by index.
-// this library support devices with index < MaxDevices
+// Open returns an opened device based on index where index < MaxDevices.
 func Open(index int) (*Context, error) {
 	var dev *C.rtlsdr_dev_t
 	i := int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&dev),
@@ -270,9 +262,8 @@ func (dev *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) error {
 	return libError(i)
 }
 
-// GetXtalFreq returns the crystal oscillator frequencies.
-// Typically both ICs use the same clock.
-// returns rtlFreqHz, tunerFreqHz, error
+// GetXtalFreq returns the crystal oscillator frequencies (rtlFreqHz and
+// tunerFreqHz). Typically both ICs use the same clock.
 func (dev *Context) GetXtalFreq() (int, int, error) {
 	var rtlFreqHz, tunerFreqHz C.uint32_t
 	i := int(C.rtlsdr_get_xtal_freq(dev.rtldev,
@@ -281,8 +272,8 @@ func (dev *Context) GetXtalFreq() (int, int, error) {
 	return int(rtlFreqHz), int(tunerFreqHz), libError(i)
 }
 
-// GetUsbStrings returns the device information. Note, strings may be empty.
-// returns manufact, product, serial , error
+// GetUsbStrings returns the manufact, product, and serial information
+// of the device. Note, strings may be empty.
 func (dev *Context) GetUsbStrings() (string, string, string, error) {
 	m := [257]byte{} // includes space for NULL byte
 	p := [257]byte{}
@@ -344,7 +335,7 @@ func (dev *Context) SetCenterFreq(freqHz int) error {
 	return libError(i)
 }
 
-// GetCenterFreq returns the tuned frequency or zero on error.
+// GetCenterFreq returns the tuned frequency, or zero on error.
 func (dev *Context) GetCenterFreq() int {
 	return int(C.rtlsdr_get_center_freq(dev.rtldev))
 }
@@ -361,7 +352,7 @@ func (dev *Context) SetFreqCorrection(ppm int) error {
 	return libError(i)
 }
 
-// GetFreqCorrection returns the frequency correction value(ppm).
+// GetFreqCorrection returns the frequency correction value in ppm.
 func (dev *Context) GetFreqCorrection() int {
 	return int(C.rtlsdr_get_freq_correction(dev.rtldev))
 }
@@ -378,6 +369,7 @@ func (dev *Context) GetTunerType() (tunerType string) {
 }
 
 // GetTunerGains returns a list of supported tuner gains.
+//
 // Values are in tenths of dB, e.g. 115 means 11.5 dB.
 func (dev *Context) GetTunerGains() ([]int, error) {
 	// count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
@@ -563,9 +555,6 @@ func (dev *Context) ResetBuffer() error {
 
 // ReadSync performs a synchronous read of samples and returns
 // the number of samples read.
-// Warning! repeated/loop calls to ReadSync work reliable only for small
-// sample rates because of high cost of cgo calls
-// return number of read bytes, error
 func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 	var nRead C.int
 	// FIXME use len(buf) for leng ? API change
@@ -575,14 +564,6 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 		&nRead))
 	return int(nRead), libError(i)
 }
-
-// Due to the restrictions imposed by the new
-// "Rules for passing pointers between Go and C" at
-// https://github.com/golang/proposal/blob/master/design/12416-cgo-pointers.md
-// and https://github.com/golang/go/issues/12416
-// https://groups.google.com/forum/#!topic/golang-dev/S7zPrUEkbKs
-// https://go-review.googlesource.com/#/c/16003/
-// ReadAsync no longer accepts a userdefined context parameter.
 
 // ReadAsync reads samples asynchronously. Note, this function
 // will block until canceled using CancelAsync. ReadAsyncCbT is
@@ -663,8 +644,8 @@ func (dev *Context) SetHwInfo(info HwInfo) error {
 	return dev.WriteEeprom(data, 0, EepromSize)
 }
 
-// GetStringDescriptors gets the manufacturer, product, and serial
-// strings from the hardware's eeprom.
+// GetStringDescriptors gets the manufacturer, product,
+// and serial strings from data.
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
 	pos := StrOffsetStart
 	for _, v := range []*string{&manufact, &product, &serial} {
@@ -690,8 +671,8 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 	return
 }
 
-// SetStringDescriptors sets the manufacturer, product, and serial
-// strings on the hardware's eeprom.
+// SetStringDescriptors sets the manufacturer, product,
+// and serial strings in data.
 func SetStringDescriptors(info HwInfo, data []uint8) error {
 	e := ""
 	if len(info.Manufact) > MaxStrSize {
