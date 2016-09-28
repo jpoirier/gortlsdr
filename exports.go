@@ -22,6 +22,9 @@ func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, u unsafe.Pointer) {
 	n := int(p2)
 	buf := (*[1 << 24]byte)(unsafe.Pointer(p1))[:n:n]
 	dev := contexts[int(uintptr(u))]
+	if dev == nil {
+		return
+	}
 	// FIXME add user context
 	// TODO add device ? many advaced rtl-sdr software use device inside callback
 	dev.clientCb(buf)
