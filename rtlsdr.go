@@ -37,12 +37,12 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
+// PackageVersion is the current version
+var PackageVersion = "v2.10.0"
+
 // MaxDevices is the theoretical maximum number of devices
 // allowed on a single USB 2.0 controller
 const MaxDevices = 127
-
-// PackageVersion is the current version
-var PackageVersion = "v2.10.0"
 
 // ReadAsyncCbT defines a user callback function type.
 // FIXME add user context
