@@ -37,7 +37,9 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-const MaxDevices = 100
+// Max index of device that can be opened by gortlsdr.
+// Equals theoretical maximum number of devices you can have on a single USB 2.0 controller
+const MaxDevices = 127
 
 // PackageVersion is the current version
 var PackageVersion = "v2.9.16"
