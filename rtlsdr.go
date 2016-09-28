@@ -37,12 +37,12 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-// PackageVersion is the current version
-var PackageVersion = "v2.10.0"
-
-// MaxDevices is the theoretical maximum number of devices
-// you can have on a single USB 2.0 controller.
+// Max index of device that can be opened by gortlsdr.
+// Equals theoretical maximum number of devices you can have on a single USB 2.0 controller
 const MaxDevices = 127
+
+// PackageVersion is the current version
+var PackageVersion = "v2.9.16"
 
 // ReadAsyncCbT defines a user callback function type.
 // FIXME add user context
@@ -70,6 +70,13 @@ type Context struct {
 //
 // A user context assertion:  device := (*userctx).(*rtl.Context)
 type UserCtx interface{} // TODO remove this type, better use interface{} ?
+
+// CustUserCtx allows a user to specify a unique callback function
+// and context with each call to ReadAsync2.
+// type CustUserCtx struct {
+// 	ClientCb ReadAsyncCbT
+// 	Userctx  *UserCtx
+// }
 
 // HwInfo holds dongle specific information.
 type HwInfo struct {
@@ -194,8 +201,8 @@ func GetDeviceName(index int) string {
 	return C.GoString(C.rtlsdr_get_device_name(C.uint32_t(index)))
 }
 
-// GetDeviceUsbStrings returns the information of a device (manufact,
-// product, serial, error) by index.
+// GetDeviceUsbStrings returns the information of a device by index.
+// returns manufact, product, serial, error
 func GetDeviceUsbStrings(index int) (string, string, string, error) {
 	m := [257]byte{} // includes space for NULL byte
 	p := [257]byte{}
@@ -228,7 +235,8 @@ func GetIndexBySerial(serial string) (index int, err error) {
 	return
 }
 
-// Open returns an opened device by index value < MaxDevices
+// Open returns an opened device by index.
+// this library support devices with index < MaxDevices
 func Open(index int) (*Context, error) {
 	var dev *C.rtlsdr_dev_t
 	i := int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&dev),
@@ -262,8 +270,9 @@ func (dev *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) error {
 	return libError(i)
 }
 
-// GetXtalFreq returns the crystal oscillator frequencies (rtlFreqHz and
-// tunerFreqHz). Typically both ICs use the same clock.
+// GetXtalFreq returns the crystal oscillator frequencies.
+// Typically both ICs use the same clock.
+// returns rtlFreqHz, tunerFreqHz, error
 func (dev *Context) GetXtalFreq() (int, int, error) {
 	var rtlFreqHz, tunerFreqHz C.uint32_t
 	i := int(C.rtlsdr_get_xtal_freq(dev.rtldev,
@@ -272,8 +281,8 @@ func (dev *Context) GetXtalFreq() (int, int, error) {
 	return int(rtlFreqHz), int(tunerFreqHz), libError(i)
 }
 
-// GetUsbStrings returns the device information (manufact, product, serial).
-// Note, strings may be empty.
+// GetUsbStrings returns the device information. Note, strings may be empty.
+// returns manufact, product, serial , error
 func (dev *Context) GetUsbStrings() (string, string, string, error) {
 	m := [257]byte{} // includes space for NULL byte
 	p := [257]byte{}
@@ -352,7 +361,7 @@ func (dev *Context) SetFreqCorrection(ppm int) error {
 	return libError(i)
 }
 
-// GetFreqCorrection returns the frequency correction ppm value.
+// GetFreqCorrection returns the frequency correction value(ppm).
 func (dev *Context) GetFreqCorrection() int {
 	return int(C.rtlsdr_get_freq_correction(dev.rtldev))
 }
@@ -369,7 +378,6 @@ func (dev *Context) GetTunerType() (tunerType string) {
 }
 
 // GetTunerGains returns a list of supported tuner gains.
-//
 // Values are in tenths of dB, e.g. 115 means 11.5 dB.
 func (dev *Context) GetTunerGains() ([]int, error) {
 	// count := int(C.rtlsdr_get_tuner_gains((*C.rtlsdr_dev_t)(c.dev), nil))
@@ -435,8 +443,8 @@ func (dev *Context) SetTunerIfGain(stage, gainTenthsDb int) error {
 	return libError(i)
 }
 
-// SetTunerGainMode sets the gain mode (automatic/manual). Note,
-// manual gain mode must be enabled for the gain setter function to work.
+// SetTunerGainMode sets the gain mode (automatic/manual).
+// Manual gain mode must be enabled for the gain setter function to work.
 func (dev *Context) SetTunerGainMode(manualMode bool) error {
 	mode := 0 // automatic tuner gain
 	if manualMode {
@@ -555,6 +563,9 @@ func (dev *Context) ResetBuffer() error {
 
 // ReadSync performs a synchronous read of samples and returns
 // the number of samples read.
+// Warning! repeated/loop calls to ReadSync work reliable only for small
+// sample rates because of high cost of cgo calls
+// return number of read bytes, error
 func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 	var nRead C.int
 	// FIXME use len(buf) for leng ? API change
@@ -565,18 +576,26 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 	return int(nRead), libError(i)
 }
 
+// Due to the restrictions imposed by the new
+// "Rules for passing pointers between Go and C" at
+// https://github.com/golang/proposal/blob/master/design/12416-cgo-pointers.md
+// and https://github.com/golang/go/issues/12416
+// https://groups.google.com/forum/#!topic/golang-dev/S7zPrUEkbKs
+// https://go-review.googlesource.com/#/c/16003/
+// ReadAsync no longer accepts a userdefined context parameter.
+
 // ReadAsync reads samples asynchronously. Note, this function
 // will block until canceled using CancelAsync. ReadAsyncCbT is
 // a package global variable and therefore unsafe for use with
 // multiple dongles.
 //
+// Note, please use ReadAsync2 as this method will be deprecated
+// in the future.
+//
 // Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
 // set to 0 for default buffer count (32).
-//
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-//
-// Note, UserCtx is not currently used.
 func (dev *Context) ReadAsync(f ReadAsyncCbT, u *UserCtx, bufNum, bufLen int) error {
 	dev.clientCb = f
 	dev.userCtx = u
@@ -645,7 +664,7 @@ func (dev *Context) SetHwInfo(info HwInfo) error {
 }
 
 // GetStringDescriptors gets the manufacturer, product, and serial
-// strings from data, which should be read the device's eeprom.
+// strings from the hardware's eeprom.
 func GetStringDescriptors(data []uint8) (manufact, product, serial string, err error) {
 	pos := StrOffsetStart
 	for _, v := range []*string{&manufact, &product, &serial} {
@@ -672,7 +691,7 @@ func GetStringDescriptors(data []uint8) (manufact, product, serial string, err e
 }
 
 // SetStringDescriptors sets the manufacturer, product, and serial
-// strings in data, which can be written to the device's eeprom.
+// strings on the hardware's eeprom.
 func SetStringDescriptors(info HwInfo, data []uint8) error {
 	e := ""
 	if len(info.Manufact) > MaxStrSize {
