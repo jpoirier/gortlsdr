@@ -9,7 +9,6 @@
 package rtlsdr
 
 import (
-	"reflect"
 	"unsafe"
 )
 
@@ -19,13 +18,14 @@ import (
 import "C"
 
 //export goRTLSDRCallback
-func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, _ unsafe.Pointer) {
-	// c buffer to go slice without copying
-	var buf []byte
-	length := int(p2)
-	b := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
-	b.Cap = length
-	b.Len = length
-	b.Data = uintptr(unsafe.Pointer(p1))
-	clientCb(buf)
+func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, u unsafe.Pointer) {
+	n := int(p2)
+	buf := (*[1 << 24]byte)(unsafe.Pointer(p1))[:n:n]
+	dev := contexts[int(uintptr(u))]
+	if dev == nil {
+		return
+	}
+	// FIXME add user context
+	// TODO add device ? many advaced rtl-sdr software use device inside callback
+	dev.clientCb(buf)
 }
