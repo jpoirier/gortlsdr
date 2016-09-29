@@ -558,18 +558,18 @@ func (dev *Context) ResetBuffer() error {
 // ReadSync performs a synchronous read of samples and returns
 // the number of samples read.
 func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
-	return dev.ReadSync2(buf[:leng])
+	var nRead C.int
+	i := int(C.rtlsdr_read_sync(dev.rtldev,
+		unsafe.Pointer(&buf[0]),
+		C.int(leng),
+		&nRead))
+	return int(nRead), libError(i)
 }
 
 // ReadSync2 performs a synchronous read of samples and returns
 // the number of samples read. Same as ReadSync, but more idiomatic
 func (dev *Context) ReadSync2(buf []uint8) (int, error) {
-	var nRead C.int
-	i := int(C.rtlsdr_read_sync(dev.rtldev,
-		unsafe.Pointer(&buf[0]),
-		C.int(len(buf)),
-		&nRead))
-	return int(nRead), libError(i)
+	return dev.ReadSync(buf, len(buf))
 }
 
 // ReadAsync reads samples asynchronously. Note, this function
