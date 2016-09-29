@@ -577,7 +577,7 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync(f ReadAsyncCbT, u *UserCtx, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) error {
 	dev.clientCb = f
 	dev.clientCb2 = nil
 	dev.userCtx = u
@@ -596,7 +596,7 @@ func (dev *Context) ReadAsync(f ReadAsyncCbT, u *UserCtx, bufNum, bufLen int) er
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u *UserCtx, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u UserCtx, bufNum, bufLen int) error {
 	dev.clientCb2 = f
 	dev.clientCb = nil
 	dev.userCtx = u
