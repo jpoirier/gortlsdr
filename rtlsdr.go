@@ -607,9 +607,9 @@ func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) err
 //
 // Examples would be a channel, a device context, a buffer, etc..
 //
-// A channel type assertion:  c, ok := (*userctx).(chan bool)
+// A channel type assertion:  c, ok := userctx.(chan bool)
 //
-// A user context assertion:  device := (*userctx).(*rtl.Context)
+// A user context assertion:  device := userctx.(*rtl.Context)
 func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u UserCtx, bufNum, bufLen int) error {
 	dev.clientCb2 = f
 	dev.clientCb = nil
