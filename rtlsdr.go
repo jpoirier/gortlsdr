@@ -61,18 +61,6 @@ type Context struct {
 	userCtx   interface{}
 }
 
-// UserCtx defines the second parameter of the ReadAsync method
-// and is meant to be type asserted in the user's callback
-// function when used. It allows the user to pass in virtually
-// any object and is similar to C's void*.
-//
-// Examples would be a channel, a device context, a buffer, etc..
-//
-// A channel type assertion:  c, ok := (*userctx).(chan bool)
-//
-// A user context assertion:  device := (*userctx).(*rtl.Context)
-type UserCtx interface{} // TODO remove this type, better use interface{} ?
-
 // HwInfo holds dongle specific information.
 type HwInfo struct {
 	VendorID     uint16
@@ -577,7 +565,7 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync(f ReadAsyncCbT, u interface{}, bufNum, bufLen int) error {
 	dev.clientCb = f
 	dev.clientCb2 = nil
 	dev.userCtx = u
@@ -596,7 +584,16 @@ func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) err
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u UserCtx, bufNum, bufLen int) error {
+// parameter u is meant to be type asserted in the user's callback
+// function when used. It allows the user to pass in virtually
+// any object and is similar to C's void*.
+//
+// Examples would be a channel, a device context, a buffer, etc..
+//
+// A channel type assertion:  c, ok := (*userctx).(chan bool)
+//
+// A user context assertion:  device := (*userctx).(*rtl.Context)
+func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u interface{}, bufNum, bufLen int) error {
 	dev.clientCb2 = f
 	dev.clientCb = nil
 	dev.userCtx = u
