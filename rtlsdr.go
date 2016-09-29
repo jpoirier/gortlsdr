@@ -566,9 +566,7 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 }
 
 // ReadAsync reads samples asynchronously. Note, this function
-// will block until canceled using CancelAsync. ReadAsyncCbT is
-// a package global variable and therefore unsafe for use with
-// multiple dongles.
+// will block until canceled using CancelAsync
 //
 // Note, please use ReadAsync2 as this method will be deprecated
 // in the future.
