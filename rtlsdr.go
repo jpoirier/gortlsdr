@@ -48,15 +48,17 @@ const MaxDevices = 127
 // FIXME add user context
 // TODO add device ? many advaced rtl-sdr software use device inside callback
 type ReadAsyncCbT func([]byte)
+type ReadAsyncCbT2 func(*Context, []byte, UserCtx)
 
 var contexts [MaxDevices]*Context
 
 // Context is the opened device's context.
 type Context struct {
-	rtldev   *C.rtlsdr_dev_t
-	clientCb ReadAsyncCbT
-	idx      int
-	userCtx  interface{}
+	rtldev    *C.rtlsdr_dev_t
+	clientCb  ReadAsyncCbT
+	clientCb2 ReadAsyncCbT2
+	idx       int
+	userCtx   UserCtx
 }
 
 // UserCtx defines the second parameter of the ReadAsync method
@@ -69,7 +71,7 @@ type Context struct {
 // A channel type assertion:  c, ok := (*userctx).(chan bool)
 //
 // A user context assertion:  device := (*userctx).(*rtl.Context)
-type UserCtx interface{} // TODO remove this type, better use interface{} ?
+type UserCtx interface{}
 
 // HwInfo holds dongle specific information.
 type HwInfo struct {
@@ -557,7 +559,6 @@ func (dev *Context) ResetBuffer() error {
 // the number of samples read.
 func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 	var nRead C.int
-	// FIXME use len(buf) for leng ? API change
 	i := int(C.rtlsdr_read_sync(dev.rtldev,
 		unsafe.Pointer(&buf[0]),
 		C.int(leng),
@@ -565,10 +566,14 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 	return int(nRead), libError(i)
 }
 
+// ReadSync2 performs a synchronous read of samples and returns
+// the number of samples read. Same as ReadSync, but more idiomatic
+func (dev *Context) ReadSync2(buf []uint8) (int, error) {
+	return dev.ReadSync(buf, len(buf))
+}
+
 // ReadAsync reads samples asynchronously. Note, this function
-// will block until canceled using CancelAsync. ReadAsyncCbT is
-// a package global variable and therefore unsafe for use with
-// multiple dongles.
+// will block until canceled using CancelAsync
 //
 // Note, please use ReadAsync2 as this method will be deprecated
 // in the future.
@@ -577,8 +582,37 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync(f ReadAsyncCbT, u *UserCtx, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) error {
 	dev.clientCb = f
+	dev.clientCb2 = nil
+	dev.userCtx = u
+	i := int(C.rtlsdr_read_async(dev.rtldev,
+		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
+		unsafe.Pointer(uintptr(dev.idx)),
+		C.uint32_t(bufNum),
+		C.uint32_t(bufLen)))
+	return libError(i)
+}
+
+// ReadAsync2 reads samples asynchronously. Note, this function
+// will block until canceled using CancelAsync
+//
+// Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
+// set to 0 for default buffer count (32).
+// Optional bufLen buffer length, must be multiple of 512, set to 0 for
+// default buffer length (16 * 32 * 512).
+// parameter u is meant to be type asserted in the user's callback
+// function when used. It allows the user to pass in virtually
+// any object and is similar to C's void*.
+//
+// Examples would be a channel, a device context, a buffer, etc..
+//
+// A channel type assertion:  c, ok := userctx.(chan bool)
+//
+// A user context assertion:  device := userctx.(*rtl.Context)
+func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u UserCtx, bufNum, bufLen int) error {
+	dev.clientCb2 = f
+	dev.clientCb = nil
 	dev.userCtx = u
 	i := int(C.rtlsdr_read_async(dev.rtldev,
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
