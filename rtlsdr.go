@@ -48,15 +48,17 @@ const MaxDevices = 127
 // FIXME add user context
 // TODO add device ? many advaced rtl-sdr software use device inside callback
 type ReadAsyncCbT func([]byte)
+type ReadAsyncCbT2 func(*Context, []byte, interface{})
 
 var contexts [MaxDevices]*Context
 
 // Context is the opened device's context.
 type Context struct {
-	rtldev   *C.rtlsdr_dev_t
-	clientCb ReadAsyncCbT
-	idx      int
-	userCtx  interface{}
+	rtldev    *C.rtlsdr_dev_t
+	clientCb  ReadAsyncCbT
+	clientCb2 ReadAsyncCbT2
+	idx       int
+	userCtx   interface{}
 }
 
 // UserCtx defines the second parameter of the ReadAsync method
@@ -577,6 +579,26 @@ func (dev *Context) ReadSync(buf []uint8, leng int) (int, error) {
 // default buffer length (16 * 32 * 512).
 func (dev *Context) ReadAsync(f ReadAsyncCbT, u *UserCtx, bufNum, bufLen int) error {
 	dev.clientCb = f
+	dev.clientCb2 = nil
+	dev.userCtx = u
+	i := int(C.rtlsdr_read_async(dev.rtldev,
+		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
+		unsafe.Pointer(uintptr(dev.idx)),
+		C.uint32_t(bufNum),
+		C.uint32_t(bufLen)))
+	return libError(i)
+}
+
+// ReadAsync2 reads samples asynchronously. Note, this function
+// will block until canceled using CancelAsync
+//
+// Optional bufNum buffer count, bufNum * bufLen = overall buffer size,
+// set to 0 for default buffer count (32).
+// Optional bufLen buffer length, must be multiple of 512, set to 0 for
+// default buffer length (16 * 32 * 512).
+func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u *UserCtx, bufNum, bufLen int) error {
+	dev.clientCb2 = f
+	dev.clientCb = nil
 	dev.userCtx = u
 	i := int(C.rtlsdr_read_async(dev.rtldev,
 		(C.rtlsdr_read_async_cb_t)(C.get_go_cb()),
