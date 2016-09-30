@@ -38,7 +38,7 @@ func rtlsdrCb2(c *rtl.Context, buf []byte, userctx interface{}) {
 	log.Printf("Length of async-read buffer: %d\n", len(buf))
 }
 
-// asyncStop pends for a ping from the rtlsdrCb function
+// asyncStop pends for a ping from the rtlsdrCb2 function
 // callback, and when received cancel the async callback.
 func asyncStop(dev *rtl.Context, c chan bool) {
 	log.Println("asyncStop running...")
@@ -243,7 +243,6 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	//---------- ReadSynch test ----------
-
 	uatDev.wg = &sync.WaitGroup{}
 	uatDev.wg.Add(1)
 	fmt.Printf("\n======= CTRL+C to exit... =======\n\n")
