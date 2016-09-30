@@ -45,8 +45,6 @@ var PackageVersion = "v2.10.0"
 const MaxDevices = 127
 
 // ReadAsyncCbT defines a user callback function type.
-// FIXME add user context
-// TODO add device ? many advaced rtl-sdr software use device inside callback
 type ReadAsyncCbT func([]byte)
 
 // ReadAsyncCbT2 defines a user callback function type.
