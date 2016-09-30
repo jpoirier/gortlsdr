@@ -48,7 +48,7 @@ const MaxDevices = 127
 // FIXME add user context
 // TODO add device ? many advaced rtl-sdr software use device inside callback
 type ReadAsyncCbT func([]byte)
-type ReadAsyncCbT2 func(*Context, []byte, UserCtx)
+type ReadAsyncCbT2 func(*Context, []byte, interface{})
 
 var contexts [MaxDevices]*Context
 
@@ -58,20 +58,8 @@ type Context struct {
 	clientCb  ReadAsyncCbT
 	clientCb2 ReadAsyncCbT2
 	idx       int
-	userCtx   UserCtx
+	userCtx   interface{}
 }
-
-// UserCtx defines the second parameter of the ReadAsync method
-// and is meant to be type asserted in the user's callback
-// function when used. It allows the user to pass in virtually
-// any object and is similar to C's void*.
-//
-// Examples would be a channel, a device context, a buffer, etc..
-//
-// A channel type assertion:  c, ok := (*userctx).(chan bool)
-//
-// A user context assertion:  device := (*userctx).(*rtl.Context)
-type UserCtx interface{}
 
 // HwInfo holds dongle specific information.
 type HwInfo struct {
@@ -582,7 +570,7 @@ func (dev *Context) ReadSync2(buf []uint8) (int, error) {
 // set to 0 for default buffer count (32).
 // Optional bufLen buffer length, must be multiple of 512, set to 0 for
 // default buffer length (16 * 32 * 512).
-func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync(f ReadAsyncCbT, u interface{}, bufNum, bufLen int) error {
 	dev.clientCb = f
 	dev.clientCb2 = nil
 	dev.userCtx = u
@@ -610,7 +598,7 @@ func (dev *Context) ReadAsync(f ReadAsyncCbT, u UserCtx, bufNum, bufLen int) err
 // A channel type assertion:  c, ok := userctx.(chan bool)
 //
 // A user context assertion:  device := userctx.(*rtl.Context)
-func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u UserCtx, bufNum, bufLen int) error {
+func (dev *Context) ReadAsync2(f ReadAsyncCbT2, u interface{}, bufNum, bufLen int) error {
 	dev.clientCb2 = f
 	dev.clientCb = nil
 	dev.userCtx = u
