@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	rtl "github.com/jpoirier/gortlsdr"
 )
@@ -18,6 +19,36 @@ import (
 type UAT struct {
 	dev *rtl.Context
 	wg  *sync.WaitGroup
+}
+
+var sendPing = true
+
+// rtlsdrCb2 is used for asynchronous streaming.
+func rtlsdrCb2(c *rtl.Context, buf []byte, userctx interface{}) {
+	if sendPing {
+		log.Println("sendPing = false")
+		sendPing = false
+		// send a ping to asyncStop
+		if c, ok := userctx.(chan bool); ok {
+			c <- true // async-read done signal
+		} else {
+			log.Println("fail...")
+		}
+	}
+	log.Printf("Length of async-read buffer: %d\n", len(buf))
+}
+
+// asyncStop pends for a ping from the rtlsdrCb function
+// callback, and when received cancel the async callback.
+func asyncStop(dev *rtl.Context, c chan bool) {
+	log.Println("asyncStop running...")
+	<-c
+	log.Println("Received ping from rtlsdrCb, calling CancelAsync")
+	if err := dev.CancelAsync(); err != nil {
+		log.Printf("CancelAsync failed - %s\n", err)
+	} else {
+		log.Printf("CancelAsync successful\n")
+	}
 }
 
 // read does synchronous specific reads.
@@ -190,6 +221,29 @@ func main() {
 	if err := uatDev.sdrConfig(indexID); err != nil {
 		log.Fatalf("uatDev = &UAT{indexID: id} failed: %s\n", err.Error())
 	}
+
+	//---------- ReadAsync2 test ----------
+	// Note, ReadAsync blocks until CancelAsync is called, so spawn
+	// a goroutine and wait for the async-read callback to signal.
+	IQch := make(chan bool)
+	go asyncStop(uatDev.dev, IQch)
+	var userctx interface{} = IQch
+
+	err := uatDev.dev.ReadAsync2(rtlsdrCb2, userctx, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
+	if err == nil {
+		log.Printf("\tReadAsync2 Successful\n")
+	} else {
+		log.Printf("\tReadAsync2 Fail - error: %s\n", err)
+	}
+
+	go asyncStop(uatDev.dev, IQch)
+	sendPing = true
+
+	log.Println("\nSleeping...")
+	time.Sleep(5 * time.Second)
+
+	//---------- ReadSynch test ----------
+
 	uatDev.wg = &sync.WaitGroup{}
 	uatDev.wg.Add(1)
 	fmt.Printf("\n======= CTRL+C to exit... =======\n\n")
