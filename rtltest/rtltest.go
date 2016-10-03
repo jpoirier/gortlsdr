@@ -1,17 +1,21 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
+	// "runtime"
 
 	rtl "github.com/jpoirier/gortlsdr"
 )
+
+// report ppm error every 10 sec
+const ppmInterval = time.Second * 10
 
 func ConfigTest(dev *rtl.Context, samplerate, ppmErr int) error {
 
@@ -21,9 +25,8 @@ func ConfigTest(dev *rtl.Context, samplerate, ppmErr int) error {
 		log.Printf("\tGetUsbStrings Failed - error: %s\n", err)
 		return err
 	}
-	log.Printf("\tGetUsbStrings - %s %s %s\n", m, p, s)
-
-	log.Printf("\tGetTunerType: %s\n", dev.GetTunerType())
+	fmt.Printf("\tGetUsbStrings - %s %s %s\n", m, p, s)
+	fmt.Printf("\tGetTunerType: %s\n", dev.GetTunerType())
 
 	//---------- Device Info ----------
 	info, err := dev.GetHwInfo()
@@ -31,25 +34,22 @@ func ConfigTest(dev *rtl.Context, samplerate, ppmErr int) error {
 		log.Printf("\tGetHwInfo Failed - error: %s\n", err)
 		return err
 	}
-	log.Printf("\tVendor ID      : 0x%X\n", info.VendorID)
-	log.Printf("\tProduct ID     : 0x%X\n", info.ProductID)
-	log.Println("\tManufacturer  : ", info.Manufact)
-	log.Println("\tProduct       : ", info.Product)
-	log.Println("\tSerial        : ", info.Serial)
-	log.Println("\tHave Serial   : ", info.HaveSerial)
-	log.Println("\tEnable IR     : ", info.EnableIR)
-	log.Println("\tRemote Wakeup : ", info.RemoteWakeup)
+	fmt.Printf("\tVendor ID      : 0x%X\n", info.VendorID)
+	fmt.Printf("\tProduct ID     : 0x%X\n", info.ProductID)
+	fmt.Println("\tManufacturer  : ", info.Manufact)
+	fmt.Println("\tProduct       : ", info.Product)
+	fmt.Println("\tSerial        : ", info.Serial)
+	fmt.Println("\tHave Serial   : ", info.HaveSerial)
+	fmt.Println("\tEnable IR     : ", info.EnableIR)
+	fmt.Println("\tRemote Wakeup : ", info.RemoteWakeup)
 
 	if ppmErr != 0 {
-		//---------- Get/Set Freq Correction ----------
-		//freqCorr := dev.GetFreqCorrection()
-		log.Printf("\tGetFreqCorrection: %d\n", ppmErr)
 		err = dev.SetFreqCorrection(ppmErr)
 		if err != nil {
 			log.Printf("\tSetFreqCorrection %d Failed, error: %s\n", ppmErr, err)
 			return err
 		}
-		log.Printf("\tSetFreqCorrection %d Successful\n", ppmErr)
+		fmt.Printf("\tSetFreqCorrection %d Successful\n", ppmErr)
 	}
 
 	//---------- Get/Set Sample Rate ----------
@@ -58,67 +58,197 @@ func ConfigTest(dev *rtl.Context, samplerate, ppmErr int) error {
 		log.Printf("\tSetSampleRate Failed - error: %s\n", err)
 		return err
 	}
-	samp_rate = samplerate
-	log.Printf("\tSetSampleRate - rate: %d\n", samplerate)
-	log.Printf("\tGetSampleRate: %d\n", dev.GetSampleRate())
+
+	fmt.Printf("SampleRate: %d\n", dev.GetSampleRate())
 
 	if err = dev.SetTestMode(true); err != nil {
 		log.Printf("\tSetTestMode 'On' Failed - error: %s\n", err)
 		return err
 	}
-	log.Printf("\tSetTestMode 'On' Successful\n")
+	fmt.Printf("\tSetTestMode 'On' Successful\n")
 
 	if err = dev.ResetBuffer(); err != nil {
 		log.Printf("\tResetBuffer Failed - error: %s\n", err)
 		return err
 	}
-	log.Printf("\tResetBuffer Successful\n")
+	// fmt.Printf("\tResetBuffer Successful\n")
 
 	return nil
 }
 
-var (
-	first        bool
-	bcnt         uint8
-	f            int
-	glost, clost int
-	samp_rate    int
-)
-
-func rtlsdrCb(buf []byte) {
-	if !first {
-		first = true
-		bcnt = buf[0]
-		//fmt.Println(bcnt, buf[0])
+func rtlsdrCb(dev *rtl.Context, buf []byte, u interface{}) {
+	c := u.(*config)
+	if !c.first {
+		c.first = true
+		//c.bcnt = buf[0]
+		c.bcnt = buf[len(buf)-1] + 1
+		return //skip firs buffer
 	}
 	lost := 0
 
 	for _, v := range buf {
-		if bcnt != v {
+		if c.bcnt != v {
 			//fmt.Println(f, i, v, bcnt)
-			if v > bcnt {
-				lost += int(v - bcnt)
+			if v > c.bcnt {
+				lost += int(v - c.bcnt)
 			} else {
-				lost += 256 + int(bcnt-v)
+				lost += 256 + int(c.bcnt-v)
 			}
 
-			clost++
-			glost += lost
-			bcnt = v
+			c.clost++
+			c.glost += lost
+			c.bcnt = v
 		}
-		bcnt++
+		c.bcnt++
 	}
 	if lost > 0 {
-		fmt.Printf("%v, lost at least %d bytes\n", f, lost)
+		c.out <- fmt.Sprintf("%v, lost at least %d bytes", c.device, lost)
 	}
-	f++
-	// time.Sleep(time.Microsecond * 10)
-	ppm_test(len(buf) / 2)
+	ppm_test(len(buf)/2, c)
+}
+
+type config struct {
+	dev        *rtl.Context
+	device     int
+	samplerate int
+	ppmErr     int
+	syncTest   bool
+
+	// test vars
+	first        bool
+	bcnt         uint8
+	glost, clost int
+	samp_rate    int
+
+	startTime    time.Time
+	totalSamples uint64
+	nextInterval time.Duration
+	ppmSkip      int
+
+	out chan string
+}
+
+func setup(c *config) error {
+	fmt.Printf("%d ===== Device name: %s =====\n", c.device, rtl.GetDeviceName(c.device))
+	var err error
+	c.dev, err = rtl.Open(c.device)
+	if err != nil {
+		log.Println(c.device, "rtl.Open return error", err)
+		return err
+	}
+
+	err = ConfigTest(c.dev, c.samplerate, c.ppmErr)
+	if err != nil {
+		log.Println("Config failed:", err.Error())
+		c.dev.Close()
+		return err
+	}
+	return nil
+}
+
+func testA(quit chan struct{}, c *config, wg *sync.WaitGroup) {
+
+	defer wg.Done()
+
+	if c.syncTest {
+		var buffer = make([]uint8, rtl.DefaultBufLength)
+	FOR:
+		for {
+
+			n, err := c.dev.ReadSync2(buffer)
+			if err != nil {
+				log.Println("ReadSync2 error", err.Error())
+				break FOR
+			}
+			if n != rtl.DefaultBufLength {
+				log.Println("short sync read")
+				break FOR
+			}
+			rtlsdrCb(c.dev, buffer[:n], c)
+
+			select {
+			case <-quit:
+				break FOR
+			default:
+			}
+		}
+	} else {
+
+		errch := make(chan error)
+		// if in goroutine that call ReadAsync is call to defer dev.Close(),
+		// in case of panic in callback, program deadlock.
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// rtl-sdr error: Failed to submit transfer 31!
+			// http://www.rtl-sdr.com/forum/viewtopic.php?f=7&t=142
+			errch <- c.dev.ReadAsync2(rtlsdrCb, c, rtl.DefaultAsyncBufNumber/4, rtl.DefaultBufLength)
+		}()
+
+		select {
+		case <-quit:
+			if err := c.dev.CancelAsync(); err != nil {
+				log.Printf("CancelAsync failed - %s\n", err)
+			} else {
+				fmt.Printf("CancelAsync successful\n")
+				err = <-errch // wait ReadAsync to return
+				if err != nil {
+					log.Println("ReadAsync2 error", err)
+				}
+			}
+		case err := <-errch:
+			if err != nil {
+				log.Println("error", err)
+			}
+		}
+
+	}
+	fmt.Println(c.device, "exiting ...")
+}
+
+func ppm_report(nsamples, interval uint64, c *config) int {
+
+	real_rate := float64(nsamples) * 1e9 / float64(interval)
+	ppm := 1e6 * (real_rate/float64(c.samplerate) - 1)
+	return int(ppm + 1)
+}
+
+func ppm_test(len int, c *config) {
+	if c.ppmSkip > 0 {
+		c.ppmSkip--
+		return
+	}
+
+	if c.totalSamples == 0 {
+		c.startTime = time.Now()
+		c.totalSamples = uint64(len)
+		c.nextInterval = ppmInterval
+		return
+	}
+
+	interval := time.Now().Sub(c.startTime)
+
+	if interval < c.nextInterval {
+		c.totalSamples += uint64(len)
+		return
+	}
+	c.nextInterval += ppmInterval
+
+	c.out <- fmt.Sprint(c.device, " real sample rate ", (1000000000*c.totalSamples)/uint64(interval), " ppm ", ppm_report(c.totalSamples, uint64(interval), c))
+	c.totalSamples += uint64(len)
+
+}
+
+func output(o chan string) {
+	for s := range o {
+		fmt.Println(s)
+	}
 }
 
 func main() {
-	var device = flag.Int("d", 0, "device idx to use")
-	var samplerate = flag.Int("s", 2048000, "Sample rate Hz")
+	var device = flag.Int("d", 0, "device idx to use, if negative -n use first n devices")
+	var samplerate = flag.Int("s", 2048000,
+		"Sample rate Hz. The RTL2832U can sample from two ranges: 225001..300000 and 900001..3200000")
 	var ppmErr = flag.Int("p", 0, "PPM Error")
 	var syncTest = flag.Bool("S", false, "use sync calls")
 	flag.Parse()
@@ -130,117 +260,104 @@ func main() {
 	if c := rtl.GetDeviceCount(); c == 0 {
 		log.Fatal("No devices found, exiting.\n")
 	} else {
+		fmt.Println("Devices found:")
 		for i := 0; i < c; i++ {
 			m, p, s, err := rtl.GetDeviceUsbStrings(i)
-			if err == nil {
-				err = errors.New("")
-			}
-			log.Printf("GetDeviceUsbStrings %s - %s %s %s\n",
-				err, m, p, s)
-		}
-	}
-	log.Printf("===== Device name: %s =====\n", rtl.GetDeviceName(*device))
-
-	dev, err := rtl.Open(*device)
-	if err != nil {
-		return
-	}
-	defer dev.Close()
-
-	err = ConfigTest(dev, *samplerate, *ppmErr)
-	if err != nil {
-		log.Fatalf("Config failed: %s\n", err.Error())
-	}
-
-	if *syncTest {
-		var buffer = make([]uint8, rtl.DefaultBufLength)
-	FOR:
-		for {
-
-			n, err := dev.ReadSync(buffer, rtl.DefaultBufLength)
 			if err != nil {
-				log.Fatal(err.Error())
-				break FOR
-			}
-			rtlsdrCb(buffer[:n])
-			dev.ReadSync(buffer, rtl.DefaultBufLength)
-			rtlsdrCb(buffer)
-			dev.ReadSync(buffer, rtl.DefaultBufLength)
-			rtlsdrCb(buffer)
-
-			select {
-			case <-ch:
-				break FOR
-			default:
-			}
-		}
-	} else {
-
-		errch := make(chan error)
-		// if in goroutine that call ReadAsync is call to defer dev.Close(),
-		// in case of panic in callback, program deadlock.
-		go func() {
-			errch <- dev.ReadAsync(rtlsdrCb, nil, rtl.DefaultAsyncBufNumber, rtl.DefaultBufLength)
-		}()
-
-		select {
-		case <-ch:
-			// ctrl c pressed
-
-			if err := dev.CancelAsync(); err != nil {
-				log.Printf("CancelAsync failed - %s\n", err)
+				log.Println(i, "GetDeviceUsbStrings return error", err)
+				return
 			} else {
-				log.Printf("CancelAsync successful\n")
-				log.Println("error", <-errch) // wait ReadAsync to return
+				fmt.Printf("GetDeviceUsbStrings: %s %s %s\n", m, p, s)
 			}
-		case err := <-errch:
-			if err != nil {
-				log.Println("error", err)
+		}
+	}
+
+	// print all info from calbacks in separate goroutine
+	str := make(chan string, 100)
+	go output(str)
+
+	var cfgs []*config
+
+	if *device < 0 {
+		fmt.Println("testing first", -*device, "devices")
+		for i := 0; i < -*device; i++ {
+			tc := &config{
+				device:     i,
+				samplerate: *samplerate,
+				ppmErr:     *ppmErr,
+				syncTest:   *syncTest,
+				ppmSkip:    40,
+				out:        str,
+			}
+			cfgs = append(cfgs, tc)
+			if err := setup(tc); err != nil {
+				log.Printf("setup device %d return error: %s", i, err)
+				return
+
 			}
 		}
 
+	} else {
+		fmt.Println("testing device", *device)
+		tc := &config{
+			device:     *device,
+			samplerate: *samplerate,
+			ppmErr:     *ppmErr,
+			syncTest:   *syncTest,
+			ppmSkip:    40,
+			out:        str,
+		}
+		cfgs = append(cfgs, tc)
+		if err := setup(tc); err != nil {
+			log.Printf("setup device %d return error: %s", *device, err)
+			return
+
+		}
 	}
-	log.Println("exiting ...")
+	fmt.Println("\nThis program compute ppm error(relative to -p parameter) every", ppmInterval)
+	fmt.Println("If lost samples are reported, computed ppm is not correct,")
+	fmt.Println(" and sample rate must be decreased, until no lost samples are reported\n")
+
+	wg := &sync.WaitGroup{}
+	quit := make(chan struct{})
+	for i := range cfgs {
+		wg.Add(1)
+		go testA(quit, cfgs[i], wg)
+	}
+
+	select {
+	case <-ch:
+		// ctrl c pressed
+	}
+	close(quit)
+	wg.Wait()
+
+	for i := range cfgs {
+		fmt.Printf("device %d, total lost bytes %d in %d buffers\n", i, cfgs[i].glost, cfgs[i].clost)
+
+	}
+
 }
 
-func ppm_report(nsamples, interval uint64) int {
+/*
+rtl_test
+Found 2 device(s):
+  0:  Realtek, RTL2838UHIDIR, SN: 00000001
+  1:  Realtek, RTL2838UHIDIR, SN: 00000002
 
-	real_rate := float64(nsamples) * 1e9 / float64(interval)
-	ppm := 1e6 * (real_rate/float64(samp_rate) - 1)
-	return int(ppm + 1)
-}
+Using device 0: Generic RTL2832U OEM
+Found Rafael Micro R820T tuner
+Supported gain values (29): 0.0 0.9 1.4 2.7 3.7 7.7 8.7 12.5 14.4 15.7 16.6 19.7 20.7 22.9 25.4 28.0 29.7 32.8 33.8 36.4 37.2 38.6 40.2 42.1 43.4 43.9 44.5 48.0 49.6
+[R82XX] PLL not locked!
+Sampling at 2048000 S/s.
 
-var (
-	startTime    time.Time
-	totalSamples uint64
-	nextInterval time.Duration
-	skip         int = 20
-)
+Info: This tool will continuously read from the device, and report if
+samples get lost. If you observe no further output, everything is fine.
 
-func ppm_test(len int) {
-	if skip > 0 {
-		skip--
-		return
-	}
-	// report ppm error every 10 sec
-	const ppmIntervel = time.Second * 10
+Reading samples in async mode...
+^CSignal caught, exiting!
 
-	if totalSamples == 0 {
-		startTime = time.Now()
-		totalSamples = uint64(len)
-		nextInterval = ppmIntervel
-		return
-	}
+User cancel, exiting...
+Samples per million lost (minimum): 0
 
-	interval := time.Now().Sub(startTime)
-
-	if interval < nextInterval {
-		totalSamples += uint64(len)
-		return
-	}
-	nextInterval += ppmIntervel
-
-	fmt.Println("real sample rate", (1000000000*totalSamples)/uint64(interval), "ppm ", ppm_report(totalSamples, uint64(interval)))
-	totalSamples += uint64(len)
-
-}
+*/
