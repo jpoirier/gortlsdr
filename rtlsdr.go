@@ -40,10 +40,6 @@ import "C"
 
 var version = "2.10.0"
 
-// MaxDevices is the theoretical maximum number of devices
-// allowed on a single USB 2.0 controller
-const MaxDevices = 127
-
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
 
