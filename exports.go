@@ -19,12 +19,13 @@ import "C"
 
 //export goRTLSDRCallback
 func goRTLSDRCallback(p1 *C.uchar, p2 C.uint32_t, u unsafe.Pointer) {
-	n := int(p2)
-	buf := (*[1 << 24]byte)(unsafe.Pointer(p1))[:n:n]
-	dev := contexts[int(uintptr(u))]
-	if dev == nil {
+	dev, ok := contexts[uint32(uintptr(u))]
+	if !ok {
 		return
 	}
+
+	n := int(p2)
+	buf := (*[1 << 24]byte)(unsafe.Pointer(p1))[:n:n]
 	if dev.clientCb2 != nil {
 		dev.clientCb2(dev, buf, dev.userCtx)
 	} else {

@@ -398,7 +398,7 @@ func main() {
 		}
 	}
 
-	for i := 3; i < 6; i++ {
+	for i := cnt; i < cnt+3; i++ {
 		if len(GetDeviceName(i)) != 0 {
 			failed++
 			log.Printf("--- FAILED, GetDeviceName i:%d\n", i)
@@ -421,7 +421,7 @@ func main() {
 		}
 	}
 
-	for i := 3; i < 6; i++ {
+	for i := cnt; i < cnt+3; i++ {
 		if _, _, _, err := GetDeviceUsbStrings(i); err == nil {
 			failed++
 			log.Printf("--- FAILED, GetDeviceUsbStrings i:%d, %s\n", i, err)
@@ -441,14 +441,17 @@ func main() {
 		}
 	}
 
-	for i := 5; i < 10; i++ {
-		if d, err := rtl.Open(i); err == nil {
-			failed++
-			log.Printf("--- FAILED, Open i:%d - %s\n", i, err)
-			continue
+	// valid indexes are 0, 1, 2, therefore we should seefive failures
+	for i := cnt; i < cnt+5; i++ {
+		var err error
+		var d *rtl.Context
+
+		if d, err = rtl.Open(i); err != nil {
+			log.Printf("--- PASSED, Open error index i:%d\n", i)
 		} else {
+			failed++
 			d.Close()
-			log.Printf("--- PASSED, Open i:%d\n", i)
+			log.Printf("--- FAILED, Open index i:%d should fail\n", i)
 		}
 	}
 
