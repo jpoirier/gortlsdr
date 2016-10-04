@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"errors"
 	"math/rand"
+	"sync"
 	"unsafe"
 )
 
@@ -38,15 +39,13 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-var version = "2.10.0"
+const version = "2.10.0"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
 
 // ReadAsyncCbT2 defines a user callback function type.
 type ReadAsyncCbT2 func(*Context, []byte, interface{})
-
-var contexts = map[uint32]*Context{}
 
 // Context is the opened device's context.
 type Context struct {
@@ -163,11 +162,40 @@ var tunerTypes = map[uint32]string{
 	C.RTLSDR_TUNER_R828D:   "RTLSDR_TUNER_R828D",
 }
 
+type _contexts struct {
+	sync.RWMutex
+	contexts map[uint32]*Context
+}
+
+var contexts = &_contexts{contexts: make(map[uint32]*Context)}
+
+func (c *_contexts) get(id uint32) (ctx *Context) {
+	c.RLock()
+	ctx = c.contexts[id]
+	c.RUnlock()
+	return
+}
+
+func (c *_contexts) put(ctx *Context) (id uint32) {
+	id = rand.Uint32()
+	c.Lock()
+	c.contexts[id] = ctx
+	c.Unlock()
+	return
+}
+
+func (c *_contexts) del(id uint32) {
+	c.Lock()
+	delete(c.contexts, id)
+	c.Unlock()
+	return
+}
+
 func getError(errno int) error {
 	if err, ok := errMap[errno]; ok {
 		return err
 	}
-	return errors.New("unknown (un-mapped) error")
+	return errors.New("unknown (unmapped) error")
 }
 
 // GetVersion returns the gortlsdr package version.
@@ -223,10 +251,8 @@ func Open(index int) (*Context, error) {
 	var ctx *Context
 	i := int(C.rtlsdr_open((**C.rtlsdr_dev_t)(&dev), C.uint32_t(index)))
 	if i == 0 {
-		// Using random id values to avoid index collisions
-		id := rand.Uint32()
-		ctx = &Context{rtldev: dev, id: id}
-		contexts[id] = ctx
+		ctx = &Context{rtldev: dev}
+		ctx.id = contexts.put(ctx)
 	}
 	return ctx, getError(i)
 }
@@ -234,7 +260,7 @@ func Open(index int) (*Context, error) {
 // Close closes the device.
 func (dev *Context) Close() error {
 	i := int(C.rtlsdr_close(dev.rtldev)) // (*C.rtlsdr_dev_t)(dev)))
-	delete(contexts, dev.id)
+	contexts.del(dev.id)
 	return getError(i)
 }
 
@@ -254,13 +280,11 @@ func (dev *Context) SetXtalFreq(rtlFreqHz, tunerFreqHz int) error {
 	return getError(i)
 }
 
-// GetXtalFreq returns the crystal oscillator frequencies (rtlFreqHz and
-// tunerFreqHz). Typically both ICs use the same clock.
+// GetXtalFreq returns the crystal oscillator frequencies, rtlFreqHz and
+// tunerFreqHz. Typically both ICs use the same clock.
 func (dev *Context) GetXtalFreq() (int, int, error) {
 	var rtlFreqHz, tunerFreqHz C.uint32_t
-	i := int(C.rtlsdr_get_xtal_freq(dev.rtldev,
-		&rtlFreqHz,
-		&tunerFreqHz))
+	i := int(C.rtlsdr_get_xtal_freq(dev.rtldev, &rtlFreqHz, &tunerFreqHz))
 	return int(rtlFreqHz), int(tunerFreqHz), getError(i)
 }
 
@@ -358,7 +382,7 @@ func (dev *Context) GetTunerType() (tunerType string) {
 //
 // Values are in tenths of dB, e.g. 115 means 11.5 dB.
 func (dev *Context) GetTunerGains() ([]int, error) {
-	buf := make([]int, 60) // a value larger than the max gain count
+	buf := make([]int, 60) // a value larger than the max the gain count, ~30
 	i := int(C.rtlsdr_get_tuner_gains(dev.rtldev, (*C.int)(unsafe.Pointer(&buf[0]))))
 	switch {
 	case i == -1:
@@ -406,20 +430,15 @@ func (dev *Context) GetTunerGain() int {
 // Intermediate frequency gain stage number 1 to 6.
 // Gain values are in tenths of dB, e.g. -30 means -3.0 dB.
 func (dev *Context) SetTunerIfGain(stage, gainTenthsDb int) error {
-	i := int(C.rtlsdr_set_tuner_if_gain(dev.rtldev,
-		C.int(stage),
-		C.int(gainTenthsDb)))
+	i := int(C.rtlsdr_set_tuner_if_gain(dev.rtldev, C.int(stage), C.int(gainTenthsDb)))
 	return getError(i)
 }
 
-// SetTunerGainMode sets the gain mode (automatic/manual).
+// SetTunerGainMode set the gain mode, manual: true, automatic: false.
+//
 // Manual gain mode must be enabled for the gain setter function to work.
 func (dev *Context) SetTunerGainMode(manualMode bool) error {
-	mode := 0 // automatic tuner gain
-	if manualMode {
-		mode = 1 // manual tuner gain
-	}
-	i := int(C.rtlsdr_set_tuner_gain_mode(dev.rtldev, C.int(mode)))
+	i := int(C.rtlsdr_set_tuner_gain_mode(dev.rtldev, C.int(b2i(manualMode))))
 	return getError(i)
 }
 
@@ -430,7 +449,6 @@ func (dev *Context) SetTunerGainMode(manualMode bool) error {
 func (dev *Context) SetSampleRate(rateHz int) error {
 	i := int(C.rtlsdr_set_sample_rate(dev.rtldev, C.uint32_t(rateHz)))
 	return getError(i)
-
 }
 
 // GetSampleRate returns the sample rate in Hz.
@@ -438,26 +456,18 @@ func (dev *Context) GetSampleRate() int {
 	return int(C.rtlsdr_get_sample_rate(dev.rtldev))
 }
 
-// SetTestMode sets device to  test mode.
+// SetTestMode sets test mode on or off.
 //
 // Test mode returns 8 bit counters instead of samples. Note,
 // the counter is generated inside the device.
-func (dev *Context) SetTestMode(testMode bool) error {
-	mode := 0 // test mode off
-	if testMode {
-		mode = 1 // test mode on
-	}
-	i := int(C.rtlsdr_set_testmode(dev.rtldev, C.int(mode)))
+func (dev *Context) SetTestMode(on bool) error {
+	i := int(C.rtlsdr_set_testmode(dev.rtldev, C.int(b2i(on))))
 	return getError(i)
 }
 
-// SetAgcMode sets the AGC mode.
-func (dev *Context) SetAgcMode(AGCMode bool) error {
-	mode := 0 // AGC off
-	if AGCMode {
-		mode = 1 // AGC on
-	}
-	i := int(C.rtlsdr_set_agc_mode(dev.rtldev, C.int(mode)))
+// SetAgcMode sets the AGC mode on or off.
+func (dev *Context) SetAgcMode(on bool) error {
+	i := int(C.rtlsdr_set_agc_mode(dev.rtldev, C.int(b2i(on))))
 	return getError(i)
 }
 
@@ -613,10 +623,10 @@ func (dev *Context) GetHwInfo() (info HwInfo, err error) {
 	if data[6] == 0xA5 {
 		info.HaveSerial = true
 	}
-	if t := data[7] & 0x01; t == 1 {
+	if data[7]&0x01 == 1 {
 		info.RemoteWakeup = true
 	}
-	if t := data[7] & 0x02; t == 2 {
+	if data[7]&0x02 == 2 {
 		info.EnableIR = true
 	}
 	info.Manufact, info.Product, info.Serial, err = GetStringDescriptors(data)
@@ -637,10 +647,10 @@ func (dev *Context) SetHwInfo(info HwInfo) error {
 		data[6] = 0xA5
 	}
 	if info.RemoteWakeup == true {
-		data[7] = data[7] | 0x01
+		data[7] |= 0x01
 	}
 	if info.EnableIR == true {
-		data[7] = data[7] | 0x02
+		data[7] |= 0x02
 	}
 	if err := SetStringDescriptors(info, data); err != nil {
 		return err
@@ -705,4 +715,16 @@ func SetStringDescriptors(info HwInfo, data []uint8) error {
 		pos += i
 	}
 	return nil
+}
+
+func b2i(b bool) int {
+	// The compiler currently only optimizes this form.
+	// See issue 6011.
+	var i int
+	if b {
+		i = 1
+	} else {
+		i = 0
+	}
+	return i
 }
