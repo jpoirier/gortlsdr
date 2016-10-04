@@ -200,7 +200,7 @@ func getError(errno int) error {
 
 // GetVersion returns the gortlsdr package version.
 func GetVersion() string {
-	return version
+	return Version
 }
 
 // GetDeviceCount returns the number of devices detected.
