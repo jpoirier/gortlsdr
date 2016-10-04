@@ -39,7 +39,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 */
 import "C"
 
-const version = "2.10.0"
+const Version = "2.10.0"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
