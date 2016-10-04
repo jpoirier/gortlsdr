@@ -434,7 +434,7 @@ func (dev *Context) SetTunerIfGain(stage, gainTenthsDb int) error {
 	return getError(i)
 }
 
-// SetTunerGainMode set the gain mode, manual: true, automatic: false.
+// SetTunerGainMode sets the gain mode, manual: true, automatic: false.
 //
 // Manual gain mode must be enabled for the gain setter function to work.
 func (dev *Context) SetTunerGainMode(manualMode bool) error {
