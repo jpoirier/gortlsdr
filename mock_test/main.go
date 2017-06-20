@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016 Joseph D Poirier
+// Copyright (c) 2015-2017 Joseph D Poirier
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
@@ -369,6 +369,26 @@ func SetHwInfo(d *rtl.Context, i int) {
 	}
 }
 
+func SetBiasTee(d *rtl.Context, i int) {
+	var err error
+
+	if err = d.SetBiasTee(true); err != nil {
+		failed++
+		log.Printf("--- FAILED, SetBiasTee i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, SetBiasTee i:%d\n", i)
+	}
+
+	if err = d.SetBiasTee(false); err != nil {
+		failed++
+		log.Printf("--- FAILED, SetBiasTee i:%d - %s\n", i, err)
+	} else {
+		passed++
+		log.Printf("--- PASSED, SetBiasTee i:%d\n", i)
+	}
+}
+
 var asyncReadCnt int
 
 func rtlsdrCb(buf []byte) {
@@ -505,6 +525,9 @@ func main() {
 		GetOffsetTuning(d, i)
 		SetOffsetTuning(d, i)
 
+		SetBiasTee(d, i)
+		SetBiasTee(d, i)
+                
 		SetHwInfo(d, i)
 		GetHwInfo(d, i)
 
