@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2016 Joseph D Poirier
+// Copyright (c) 2012-2017 Joseph D Poirier
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
@@ -38,7 +38,7 @@ static inline rtlsdr_read_async_cb_t get_go_cb() {
 import "C"
 
 // PackageVersion is the current version
-var PackageVersion = "v2.9.16"
+var PackageVersion = "v2.10.0"
 
 // ReadAsyncCbT defines a user callback function type.
 type ReadAsyncCbT func([]byte)
@@ -584,6 +584,16 @@ func (dev *Context) ReadAsync(f ReadAsyncCbT, _ *UserCtx, bufNum, bufLen int) er
 // CancelAsync cancels all pending asynchronous operations.
 func (dev *Context) CancelAsync() error {
 	i := int(C.rtlsdr_cancel_async((*C.rtlsdr_dev_t)(dev)))
+	return libError(i)
+}
+
+// SetBiasTee enables or disables bias tee.
+func (dev *Context) SetBiasTee(enable bool) error {
+	mode := 0 // off
+	if enable {
+		mode = 1 // on
+	}
+	i := int(C.rtlsdr_set_bias_tee((*C.rtlsdr_dev_t)(dev), C.int(mode)))
 	return libError(i)
 }
 

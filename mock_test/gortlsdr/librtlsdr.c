@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Joseph D Poirier
+ * Copyright (c) 2015-2017 Joseph D Poirier
  * Distributable under the terms of The New BSD License
  * that can be found in the LICENSE file.
  *
@@ -22,8 +22,8 @@
 #define DEBVICE_CNT (3)
 #define DEVICE_GAIN_CNT (29)
 #define EEPROM_SIZE (256)
-#define DEFAULT_BUF_NUMBER	(15)
-#define DEFAULT_BUF_LENGTH	(16 * 32 * 512)
+#define DEFAULT_BUF_NUMBER (15)
+#define DEFAULT_BUF_LENGTH (16 * 32 * 512)
 #define STRINGS_OFFSET_START (9)
 #define MAX_RAW_STR_SZ (2*35+2)
 
@@ -639,5 +639,11 @@ int rtlsdr_cancel_async(rtlsdr_dev_t *dev) {
 		dev->async_cancel = 1;
 	}
 	pthread_mutex_unlock(&dev->lock);
+	return 0;
+}
+
+int rtlsdr_set_bias_tee(rtlsdr_dev_t *dev, int on) {
+	if (!dev)
+		return -1;
 	return 0;
 }
