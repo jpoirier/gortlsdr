@@ -20,9 +20,9 @@ Supported Platforms:
 
 ## Dependencies
 * [Go tools](https://golang.org)
-* [librtlsdr] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) - builds dated after 5/5/12
-* [libusb] (https://www.libusb.org)
-* [git] (https://git-scm.com)
+* [librtlsdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr) - builds dated after 5/5/12
+* [libusb](https://www.libusb.org)
+* [git](https://git-scm.com)
 
 
 ## Usage
@@ -67,8 +67,8 @@ Building gortlsdr on Windows:
 
 # Credit
 * [pyrtlsdr](https://github.com/roger-/pyrtlsdr) for the great read-me description, which I copied.
-* [osmoconSDR] (http://sdr.osmocom.org/trac/wiki/rtl-sdr) for the rtl-sdr library.
-* [Antti Palosaari] (http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing!
+* [osmoconSDR](http://sdr.osmocom.org/trac/wiki/rtl-sdr) for the rtl-sdr library.
+* [Antti Palosaari](http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/44461/focus=44461) for sharing!
 
 # Todo
 
