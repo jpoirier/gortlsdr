@@ -14,6 +14,7 @@ import (
 )
 
 /*
+#cgo pkg-config: librtlsdr 
 #include <rtl-sdr.h>
 */
 import "C"
